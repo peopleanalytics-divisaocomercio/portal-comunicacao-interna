@@ -1,0 +1,44 @@
+:root{
+/* base — brand primaries (Manual de Marca Divisão Comércio 2025) */
+--blue-dark:#0f4b87;
+--blue-light:#0f7cb9;
+--orange:#ff931e;
+--gray-brand:#e6e6e4;
+/* base — ink & neutrals (from Portal CI prototype) */
+--ink:#16283d;
+--slate:#5a6b7b;
+--muted:#8a97a3;
+--line:#e4e9ef;
+--canvas:#f5f7fa;
+--white:#ffffff;
+--soft-blue:#eaf1f8;
+--soft-orange:#fff3e0;
+/* semantic status */
+--success:#1b7a3d;
+--success-bg:#e2f3e8;
+--info:#0f7cb9;
+--info-bg:#e2f1f9;
+--warning:#ff931e;
+--warning-bg:#fff3e0;
+--danger:#c0392b;
+--danger-bg:#fbe7e4;
+--neutral-bg:#eef1f4;
+/* nature (Projeto / Produto / Processo) */
+--nat-projeto:#0f4b87;
+--nat-projeto-bg:#e6eef6;
+--nat-produto:#0f7cb9;
+--nat-produto-bg:#e2f1f9;
+--nat-processo:#ff931e;
+--nat-processo-bg:#fff0db;
+/* semantic aliases */
+--surface-page:var(--canvas);
+--surface-card:var(--white);
+--surface-header:var(--blue-dark);
+--text-primary:var(--ink);
+--text-secondary:var(--slate);
+--text-muted:var(--muted);
+--border-default:var(--line);
+--accent:var(--orange);
+--link:var(--blue-light);
+--link-hover:var(--blue-dark);
+}
