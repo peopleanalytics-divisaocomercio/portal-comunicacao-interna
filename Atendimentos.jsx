@@ -1,3 +1,4 @@
+const linkSeguro = (u) => { const s = String(u || "").trim(); return /^https?:\/\/[^\s<>"]+$/i.test(s) ? s : null; };
 const urgChip = (u) => { const { Chip, URG_COLOR } = window.PortalUI; return u ? <Chip color="#fff" bg={URG_COLOR[u] || "var(--slate)"} icon={u === "Urgente" ? "siren" : "gauge"}>{u}</Chip> : null; };
 
 function GuiaChamado() {
@@ -18,7 +19,7 @@ function GuiaChamado() {
 function NovoChamadoModal({ onSave, onClose }) {
   const { Modal, Field, Input, Select, Button } = window.PortalCIGABComRcioDesignSystem_6ad0f7;
   const { AREAS, TIPOS_ATENDIMENTO, URGENCIAS, URG_COLOR, inputBase } = window.PortalUI;
-  const [f, setF] = React.useState({ area: "", tipo: TIPOS_ATENDIMENTO[0], urgencia: "Média", assunto: "", descricao: "", whatsapp: "", solicitante: "" });
+  const [f, setF] = React.useState({ area: "", tipo: TIPOS_ATENDIMENTO[0], urgencia: "Média", assunto: "", descricao: "", link: "", whatsapp: "", solicitante: "" });
   const set = (k, v) => setF({ ...f, [k]: v });
   const ok = f.assunto && f.solicitante && f.descricao;
   return (
@@ -34,6 +35,7 @@ function NovoChamadoModal({ onSave, onClose }) {
       </div>
       <Field label="Assunto"><Input value={f.assunto} onChange={(e) => set("assunto", e.target.value)} /></Field>
       <Field label="Descrição"><textarea style={{ ...inputBase, minHeight: 90, resize: "vertical", fontSize: 13.5 }} value={f.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder="O que precisa ser feito, para quem, onde será usado..." /></Field>
+      <Field label="Link (opcional)"><Input type="url" maxLength={500} value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://... (pasta, arquivo, referência)" /></Field>
       <div style={{ fontSize: 12, fontWeight: 700, color: "var(--slate)", marginBottom: 6 }}>Nível de urgência</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 6, marginBottom: 16 }}>
         {URGENCIAS.map(([u, d]) => (
@@ -181,6 +183,7 @@ function ChamadoDetalhe({ chamado, ativs, inis, users, user, ausencias, isGestao
           <Card style={{ padding: 20, background: "var(--soft-blue)", border: "1px solid var(--soft-blue)" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "var(--blue-dark)", textTransform: "uppercase", letterSpacing: ".4px", marginBottom: 8 }}>O que foi pedido</div>
             <div style={{ fontSize: 15, lineHeight: 1.6, color: "var(--ink)", whiteSpace: "pre-wrap" }}>{c.descricao || "—"}</div>
+            {linkSeguro(c.link) && <a href={linkSeguro(c.link)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, color: "var(--blue-dark)", fontWeight: 700, fontSize: 13, wordBreak: "break-all" }}><Icon name="link" size={14} /> {c.link}</a>}
             <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}><Chip color="var(--blue-dark)" bg="#fff" icon="tag">{c.tipo}</Chip><Chip color="var(--blue-dark)" bg="#fff" icon="building-2">{c.area}</Chip><Chip color="var(--blue-dark)" bg="#fff" icon="calendar">aberto em {c.criadoEm || "—"}</Chip></div>
           </Card>
           <Card style={{ padding: 18 }}>

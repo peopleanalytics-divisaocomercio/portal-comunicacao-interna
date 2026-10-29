@@ -77,9 +77,15 @@ function App() {
   const synced = React.useRef(false);
   const applyingRemote = React.useRef(false);
   const prevRef = React.useRef({ ...init });
-  const reloadFromRemote = React.useCallback(async () => {
+  const retryRef = React.useRef(null);
+  const reloadFromRemote = React.useCallback(async function recarregar() {
+    // Se a pessoa gravou algo enquanto a leitura estava em andamento, a foto do banco está velha: descarta e lê de novo.
+    const ocupado = () => { const e = window.PortalSync.estado(); return e.pend > 0 || Date.now() - e.lastWrite < 1200; };
+    if (synced.current && ocupado()) { clearTimeout(retryRef.current); retryRef.current = setTimeout(recarregar, 1500); return true; }
+    const s0 = window.PortalSync.estado().seq;
     const d = await window.PortalSync.loadAll();
     if (!d) return false;
+    if (synced.current && (window.PortalSync.estado().seq !== s0 || ocupado())) { clearTimeout(retryRef.current); retryRef.current = setTimeout(recarregar, 1500); return true; }
     applyingRemote.current = true;
     const full = { ...VAZIO, ...d };
     applyAll(full);
@@ -126,6 +132,9 @@ function App() {
 
   const isGestao = user.perfil === "Gestor" || user.perfil === "Administrador";
   const isAdmin = user.perfil === "Administrador";
+  const leitura = user.perfil === "Visualizador";
+  const RE_ESCRITA = /^(\+ ?)?(Nova|Novo|Lançar|Cadastrar|Salvar|Excluir|Registrar|Aceitar|Recusar|Concluir|Duplicar|Transformar|Assumir|Carregar dados)/i;
+  const guardaLeitura = (e) => { if (!leitura) return; const b = e.target.closest && e.target.closest("button"); if (!b) return; const t = (b.textContent || "").trim(); const ic = b.title || b.getAttribute("aria-label") || ""; if (RE_ESCRITA.test(t) || /excluir|apagar|remover/i.test(ic)) { e.preventDefault(); e.stopPropagation(); alert("Seu perfil é Visualizador: você pode ver tudo, mas não pode criar nem alterar."); } };
   const respAtual = P.respAtendimento(ausencias, P.TODAY);
   const podeAtender = isGestao || user.nome === respAtual;
   const iniById = (id) => inis.find((i) => i.id === id) || {};
@@ -179,7 +188,8 @@ function App() {
     <div style={{ minHeight: "100vh", fontFamily: "var(--font-sans)", background: "var(--canvas)", color: "var(--ink)" }}>
       <div className="no-print"><TopNav items={NAV} active={view} onChange={setView} userName={user.nome} userRole={user.cargo} onLogout={() => { window.PortalSync.authSignOut(); sair(); setSync({ state: window.sb ? "idle" : "local" }); }} actions={<><button onClick={() => setAusModal(true)} title="Minhas férias e folgas" style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: P.ausenteEm(ausencias, user.nome, P.TODAY) ? "var(--orange)" : "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="calendar-off" size={18} /></button><SinoNotificacoes notifs={notifs} lidas={lidas} onOpen={abrirNotif} onMarkAll={() => salvarLidas([...new Set([...lidas, ...notifs.map((n) => n.id)])])} /></>} /></div>
       {sync.state !== "local" && <div className="no-print" title={sync.msg || ""} onClick={() => sync.state === "error" && setSync({ state: "saved" })} style={{ position: "fixed", right: 16, bottom: 16, zIndex: 50, display: "flex", alignItems: "center", gap: 7, padding: "7px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600, boxShadow: "0 2px 10px rgba(0,0,0,.12)", cursor: sync.state === "error" ? "pointer" : "default", maxWidth: 420, background: sync.state === "error" ? "var(--danger-bg)" : "var(--surface, #fff)", color: sync.state === "error" ? "var(--danger)" : "var(--slate)" }}><span style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: sync.state === "error" ? "var(--danger)" : sync.state === "saving" ? "var(--orange)" : "#2E9E5B" }}></span>{sync.state === "error" ? "Erro ao salvar — " + (sync.msg || "") : sync.state === "saving" ? "Salvando…" : sync.state === "idle" ? "Conectando…" : "Sincronizado"}</div>}
-      <main style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: 26 }}>
+      <main onClickCapture={guardaLeitura} style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: 26 }}>
+        {leitura && <div className="no-print" style={{ background: "var(--canvas)", border: "1px solid var(--line)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--slate)" }}>Perfil <b>Visualizador</b>: acesso somente para consulta.</div>}
         {view === "painel" && <window.Painel {...common} chamados={chamados} podeAtender={podeAtender} respAtual={respAtual} isAdmin={isAdmin} vazio={!inis.length && !chamados.length} onCarregarExemplo={carregarExemplo} onNavigate={(v, extra) => { if (extra && extra.chamadoId) setChamadoFoco(extra.chamadoId); setView(v); }} />}
         {view === "iniciativas" && <window.Iniciativas {...common} setInis={setInis} onOpen={onOpen} fNat={fNatIni} setFNat={setFNatIni} chamados={chamados} podeAtender={podeAtender} onAbrirChamado={(id) => { setChamadoFoco(id); setView("atendimentos"); }} />}
         {view === "atividades" && <window.Atividades {...common} tarefas={tarefas} setTarefas={setTarefas} ciclos={ciclos} setCiclos={setCiclos} marcos={marcos} setMarcos={setMarcos} />}

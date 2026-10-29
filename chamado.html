@@ -43,7 +43,7 @@ async function criarChamado(f) {
   const c = { ...f, id: "", token: P.novoToken(), prazo: "", status: "Novo", criadoEm: P.agora(), criadoTs: Date.now(), criadoPor: "Formulário público", atividades: [], log: [] };
   {
     let n = 0;
-    gravarLocal((d) => { n = (d.chamados || []).reduce((m, x) => (/^AT\d+$/.test(x.id) ? Math.max(m, parseInt(x.id.slice(2), 10)) : m), 0) + 1; c.id = "AT" + String(n).padStart(4, "0"); return { ...d, chamados: [c, ...d.chamados] }; });
+    gravarLocal((d) => { n = (d.chamados || []).reduce((m, x) => { const k = /^AT(\d+)/.exec(String(x.id)); return k ? Math.max(m, parseInt(k[1], 10)) : m; }, 0) + 1; c.id = "AT" + String(n).padStart(4, "0") + "-" + Array.from(crypto.getRandomValues(new Uint8Array(2)), (b) => b.toString(16).padStart(2, "0")).join(""); return { ...d, chamados: [c, ...d.chamados] }; });
   }
   return c;
 }
@@ -69,7 +69,7 @@ function Shell({ children, sub }) {
 function Formulario() {
   const { Card, Field, Input, Select, Button } = window.PortalCIGABComRcioDesignSystem_6ad0f7;
   const P = window.PortalUI;
-  const [f, setF] = React.useState({ solicitante: "", area: "", whatsapp: "", tipo: P.TIPOS_ATENDIMENTO[0], assunto: "", descricao: "", urgencia: "Média" });
+  const [f, setF] = React.useState({ solicitante: "", area: "", whatsapp: "", tipo: P.TIPOS_ATENDIMENTO[0], assunto: "", descricao: "", link: "", urgencia: "Média" });
   const [enviando, setEnviando] = React.useState(false);
   const [erro, setErro] = React.useState("");
   const [criado, setCriado] = React.useState(null);
@@ -110,6 +110,7 @@ function Formulario() {
         </div>
         <Field label="Assunto"><Input value={f.assunto} maxLength={200} onChange={(e) => set("assunto", e.target.value)} placeholder="ex.: Vídeo para a convenção de vendas" /></Field>
         <Field label="O que você precisa?"><textarea value={f.descricao} maxLength={5000} onChange={(e) => set("descricao", e.target.value)} style={{ ...P.inputBase, minHeight: 110, resize: "vertical", fontSize: 14 }} placeholder="Descreva o pedido: para quem é, onde será usado, se já existe algum material..." /></Field>
+        <Field label="Link (opcional)"><Input type="url" value={f.link} maxLength={500} onChange={(e) => set("link", e.target.value)} placeholder="https://... (pasta, arquivo, referência)" /></Field>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--slate)", marginBottom: 6 }}>Qual o nível de urgência?</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8, marginBottom: 18 }}>
           {P.URGENCIAS.map(([u, d]) => (

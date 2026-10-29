@@ -5,7 +5,7 @@ const has = () => !!window.sb;
 const j = (v) => (v === "" || v === undefined ? null : v);
 
 // ---- status para a UI (App.jsx escuta "portal-sync") ----
-let pend = 0, lastWrite = 0;
+let pend = 0, lastWrite = 0, seq = 0;
 const emit = (detail) => window.dispatchEvent(new CustomEvent("portal-sync", { detail }));
 const ERROS = { "23505": "ID já usado por outra pessoa — recarregue a página", "23503": "registro ligado a outro que não existe mais", "42501": "sem permissão para esta ação" };
 const msgErro = (e) => ERROS[e && e.code] || (e && e.message) || String(e);
@@ -13,7 +13,7 @@ const msgErro = (e) => ERROS[e && e.code] || (e && e.message) || String(e);
 // Todas as gravações passam por uma fila única, na ordem em que foram pedidas
 // (ex.: a iniciativa é gravada antes das atividades dela).
 let fila = Promise.resolve();
-function enfileirar(fn) { pend++; lastWrite = Date.now(); emit({ state: "saving" }); const p = fila.then(fn); fila = p.catch(() => {}).then(() => { lastWrite = Date.now(); if (!--pend) emit({ state: "saved" }); }); return p; }
+function enfileirar(fn) { pend++; seq++; lastWrite = Date.now(); emit({ state: "saving" }); const p = fila.then(fn); fila = p.catch(() => {}).then(() => { lastWrite = Date.now(); if (!--pend) emit({ state: "saved" }); }); return p; }
 async function exec(q, ctx) {
   try { const r = await q; if (r && r.error) { console.error("[Supabase]", ctx, r.error); emit({ state: "error", msg: ctx + ": " + msgErro(r.error) }); } return r; }
   catch (e) { console.error("[Supabase]", ctx, e); emit({ state: "error", msg: ctx + ": " + msgErro(e) }); return { error: e }; }
@@ -23,7 +23,7 @@ async function exec(q, ctx) {
 const mapOutIniciativa = (i) => ({ dados: i, id: i.id, nome: i.nome, natureza: i.natureza, origem: j(i.origem), area: j(i.area), resp: j(i.resp), cx: j(i.cx), status: j(i.status), objetivo: j(i.objetivo), ini: j(i.ini), fim: j(i.fim) });
 const mapInIniciativa = (r) => ({ id: r.id, nome: r.nome, natureza: r.natureza, origem: r.origem, area: r.area, resp: r.resp, cx: r.cx, status: r.status, objetivo: r.objetivo, ini: r.ini, fim: r.fim, ...(r.dados || {}) });
 
-const mapOutTarefa = (t) => ({ dados: t, id: t.id, iniciativa_id: j(t.ini), wbs: j(t.wbs), nome: t.nome || "Sem nome", resp: j(t.resp), cx: j(t.cx), s: j(t.s), e: j(t.e), pct: Number(t.pct) || 0, status: j(t.status), nivel: Number(t.nivel) || 0, dependencia: j(t.dependencia), precisa_aprovacao: !!t.precisaAprovacao, aprovador1: j(t.aprovador1), aprovador2: j(t.aprovador2), aprovado1: !!t.aprovado1, aprovado2: !!t.aprovado2, print_aprovacao: j(t.printAprovacao) });
+const mapOutTarefa = (t) => ({ dados: t, id: t.id, iniciativa_id: j(t.ini), wbs: j(t.wbs), nome: t.nome || "Sem nome", resp: j(t.resp), cx: j(t.cx), s: j(t.s), e: j(t.e), pct: Number(t.pct) || 0, status: j(t.status), nivel: Number(t.nivel) || 1, dependencia: j(t.dependencia), precisa_aprovacao: !!t.precisaAprovacao, aprovador1: j(t.aprovador1), aprovador2: j(t.aprovador2), aprovado1: !!t.aprovado1, aprovado2: !!t.aprovado2, print_aprovacao: j(t.printAprovacao) });
 const mapInTarefa = (r) => ({ id: r.id, ini: r.iniciativa_id, wbs: r.wbs, nome: r.nome, resp: r.resp, cx: r.cx, s: r.s, e: r.e, pct: r.pct, status: r.status, nivel: r.nivel, dependencia: r.dependencia, precisaAprovacao: r.precisa_aprovacao, aprovador1: r.aprovador1, aprovador2: r.aprovador2, aprovado1: r.aprovado1, aprovado2: r.aprovado2, printAprovacao: r.print_aprovacao, ...(r.dados || {}) });
 
 const mapOutLanc = (l) => ({ dados: l, id: l.id, iniciativa_id: j(l.ini), titulo: l.titulo || "Sem título", resp: j(l.resp), cx: j(l.cx), vol: Number(l.vol) || 1, data_pub: j(l.dataPub), pedido: j(l.pedido), prazo: j(l.prazo), entrega: j(l.entrega), status: j(l.status) });
@@ -162,4 +162,5 @@ async function chamarAdmin(body) {
 const adminCriarUsuario = (payload) => chamarAdmin({ action: "criar_usuario", ...payload });
 const adminResetarSenha = (usuario_id) => chamarAdmin({ action: "resetar_senha", usuario_id });
 
-window.PortalSync = { authRestore, onSignedOut, loadAll, saveConfig, saveIniciativas, saveTarefas, saveLanc, saveCiclos, saveChamados, subscribeAll, authSignIn, authSignOut, authUpdatePassword, loadUsuarios, saveUsuarioFields, adminCriarUsuario, adminResetarSenha };
+const estado = () => ({ pend, seq, lastWrite });
+window.PortalSync = { estado, authRestore, onSignedOut, loadAll, saveConfig, saveIniciativas, saveTarefas, saveLanc, saveCiclos, saveChamados, subscribeAll, authSignIn, authSignOut, authUpdatePassword, loadUsuarios, saveUsuarioFields, adminCriarUsuario, adminResetarSenha };

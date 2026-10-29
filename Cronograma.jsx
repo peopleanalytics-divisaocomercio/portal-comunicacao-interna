@@ -72,6 +72,7 @@ function RowActions({ a, abrirAtiv, onDelete }) {
 function CicloCard({ ciclo, ativsCiclo, users, user, ausencias, patchAtiv, abrirAtiv, setCiclos, onDuplicar }) {
   const { Card, ProgressBar, Button } = window.PortalCIGABComRcioDesignSystem_6ad0f7;
   const { Icon, AprovChip, uid, TODAY, concluido } = window.PortalUI;
+  const lista = ativsCiclo.slice().sort((a, b) => String(a.raw.s || a.s || "9999").localeCompare(String(b.raw.s || b.s || "9999")) || String(a.raw.e || "").localeCompare(String(b.raw.e || "")) || (a.raw.criadoTs || 0) - (b.raw.criadoTs || 0));
   const conc = ativsCiclo.filter((e) => concluido(e.status)).length;
   const pct = ativsCiclo.length ? conc / ativsCiclo.length : 0;
   const pa = (a, p) => patchAtiv(a.key, p);
@@ -95,7 +96,7 @@ function CicloCard({ ciclo, ativsCiclo, users, user, ausencias, patchAtiv, abrir
         <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-sans)", minWidth: 900 }}>
           <thead><tr style={{ borderBottom: "1px solid var(--line)" }}>{["ID", "Atividade", "Início", "Fim", "Responsável", "Categoria", "Depende de", "Status", ""].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
           <tbody>
-            {ativsCiclo.map((a, idx) => (
+            {lista.map((a, idx) => (
               <tr key={a.key} style={{ borderTop: "1px solid var(--canvas)", background: a.pendenteAceite ? "var(--soft-orange)" : "transparent" }}>
                 <td style={{ padding: "4px 8px", fontSize: 10.5, color: "var(--muted)", fontFamily: "monospace", width: 40 }}>E{idx + 1}</td>
                 <td style={{ padding: 2, minWidth: 180 }}><input style={cellStyle} value={a.titulo} onFocus={focusCell} onBlur={blurCell} onChange={(ev) => pa(a, { nome: ev.target.value })} /><div style={{ paddingLeft: 8 }}><AprovChip status={a.aprov} /></div></td>
@@ -103,7 +104,7 @@ function CicloCard({ ciclo, ativsCiclo, users, user, ausencias, patchAtiv, abrir
                 <td style={{ padding: 2, width: 130 }}><input type="date" style={cellStyle} value={a.raw.e || ""} onFocus={focusCell} onBlur={blurCell} onChange={(ev) => pa(a, { e: ev.target.value })} /></td>
                 <td style={{ padding: 2, width: 170 }}><RespSelect value={a.resp} users={users} ausencias={ausencias} s={a.s} e={a.e} onChange={(ev) => pa(a, respPatch(ev.target.value, user.nome))} /></td>
                 <td style={{ padding: 2, width: 130 }}><CategoriaSelect value={a.cx} onChange={(ev) => pa(a, { cx: ev.target.value })} /></td>
-                <td style={{ padding: 2, width: 110 }}><DependenciaCell value={a.raw.dependeDe} aguardando={!!a.depAguardando} options={ativsCiclo.filter((x) => x.id !== a.id).map((x, i) => ({ id: x.id, label: "E" + (ativsCiclo.indexOf(x) + 1) + " · " + x.titulo.slice(0, 14) }))} onChange={(ev) => pa(a, { dependeDe: ev.target.value })} /></td>
+                <td style={{ padding: 2, width: 110 }}><DependenciaCell value={a.raw.dependeDe} aguardando={!!a.depAguardando} options={lista.filter((x) => x.id !== a.id).map((x, i) => ({ id: x.id, label: "E" + (lista.indexOf(x) + 1) + " · " + x.titulo.slice(0, 14) }))} onChange={(ev) => pa(a, { dependeDe: ev.target.value })} /></td>
                 <td style={{ padding: 2, width: 160 }}><StatusSelect value={a.status} onChange={(ev) => pa(a, { status: ev.target.value })} />{a.atrasada && <div style={{ fontSize: 9.5, color: "var(--danger)", fontWeight: 700, paddingLeft: 8 }}>prazo vencido</div>}</td>
                 <td style={{ padding: 2, width: 70 }}><RowActions a={a} abrirAtiv={abrirAtiv} onDelete={() => delEtapa(a.id)} /></td>
               </tr>
@@ -123,7 +124,10 @@ function NovoCicloModal({ iniciativa, base, users, user, ausencias, onSave, onCl
   const baseIni = base && base.etapas.length ? base.etapas.reduce((m, e) => (e.s && e.s < m ? e.s : m), base.etapas[0].s || TODAY) : TODAY;
   const [label, setLabel] = React.useState(sugerirNome());
   const [inicio, setInicio] = React.useState(base ? addDays(baseIni, 7) : TODAY);
-  const [etapas, setEtapas] = React.useState(base ? base.etapas.map((e) => ({ id: uid("E"), nome: e.nome, resp: e.resp, dS: e.s ? daysBetween(baseIni, e.s) : 0, dur: e.s && e.e ? daysBetween(e.s, e.e) : 0, cx: e.cx || "P", precisaAprovacao: !!e.precisaAprovacao, depIdx: e.dependeDe ? base.etapas.findIndex((x) => x.id === e.dependeDe) : -1 })) : ETAPAS_PADRAO.map((n, i) => ({ id: uid("E"), nome: n, resp: iniciativa.resp, dS: i, dur: 0, cx: "P", depIdx: i - 1 })));
+  const copiadas = base ? base.etapas.map((e) => ({ id: uid("E"), nome: e.nome, resp: e.resp, dS: e.s ? daysBetween(baseIni, e.s) : 0, dur: e.s && e.e ? daysBetween(e.s, e.e) : 0, cx: e.cx || "P", precisaAprovacao: !!e.precisaAprovacao, depIdx: e.dependeDe ? base.etapas.findIndex((x) => x.id === e.dependeDe) : -1 })) : [];
+  const [modo, setModo] = React.useState(base && copiadas.length ? "copiar" : "vazio");
+  const [etapas, setEtapas] = React.useState(base && copiadas.length ? copiadas : []);
+  const trocarModo = (m) => { setModo(m); setEtapas(m === "copiar" ? copiadas : []); };
   const setEtapa = (id, k, v) => setEtapas((prev) => prev.map((e) => e.id === id ? { ...e, [k]: v } : e));
   const salvar = () => {
     if (!label) return;
@@ -132,12 +136,14 @@ function NovoCicloModal({ iniciativa, base, users, user, ausencias, onSave, onCl
     onSave({ id: uid("CI"), ini: iniciativa.id, ciclo: label, etapas: rows });
   };
   return (
-    <Modal title={base ? "Novo ciclo a partir do anterior" : "Novo ciclo"} sub={base ? `Copiamos as atividades de "${base.ciclo}". Ajuste responsáveis e a data de início — os prazos se ajustam sozinhos.` : "Cada ciclo (edição/período) tem sua lista de atividades."} onClose={onClose} width={680}>
+    <Modal title={base ? "Novo ciclo a partir do anterior" : "Novo ciclo"} sub={modo === "copiar" ? `Copiamos as atividades de "${base.ciclo}". Ajuste responsáveis e a data de início — os prazos se ajustam sozinhos.` : "Cada ciclo (edição/período) tem sua lista de atividades. Elas aparecem ordenadas pela data de início."} onClose={onClose} width={680}>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}><Field label="Ciclo / edição"><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="ex.: 25º/2026, Ed. 44, Encontro 6" /></Field></div>
         <div style={{ flex: 1 }}><Field label="Início do ciclo"><Input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} /></Field></div>
       </div>
+      {base && copiadas.length > 0 && <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>{[["copiar", `Copiar atividades de "${base.ciclo}"`], ["vazio", "Começar vazio e lançar uma a uma"]].map(([v, l]) => <button key={v} onClick={() => trocarModo(v)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid " + (modo === v ? "var(--blue-dark)" : "var(--line)"), background: modo === v ? "var(--soft-blue)" : "#fff", color: modo === v ? "var(--blue-dark)" : "var(--slate)", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "var(--font-sans)" }}>{l}</button>)}</div>}
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--slate)", textTransform: "uppercase", letterSpacing: ".3px", margin: "6px 0 8px" }}>Atividades do ciclo</div>
+      {etapas.length === 0 && <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8 }}>Nenhuma atividade ainda. Crie o ciclo e lance as atividades uma a uma pelo botão "+ Atividade" (elas ficam em ordem de data), ou adicione aqui.</div>}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1.4fr) 120px 110px 28px", gap: 6, fontSize: 10.5, color: "var(--muted)", fontWeight: 700, marginBottom: 4 }}><span>Atividade</span><span>Responsável</span><span>Categoria</span><span>Datas</span><span></span></div>
       {etapas.map((e) => (
         <div key={e.id} style={{ display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1.4fr) 120px 110px 28px", gap: 6, marginBottom: 6, alignItems: "center" }}>

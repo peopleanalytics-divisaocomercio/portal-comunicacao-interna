@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"7995456cd493","ui_kits/portal-ci/Atendimentos.jsx":"adf2361926b0","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"235e60edaf7e","ui_kits/portal-ci/Cronograma.jsx":"d1a55cb5e887","ui_kits/portal-ci/Iniciativas.jsx":"386027995b6c","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"61de3f14de29","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/shared.jsx":"13b79fdd3433","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"8c72205eda43"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"22a321f3d1bd","ui_kits/portal-ci/Atendimentos.jsx":"84a26fd2f7e0","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"36d09f7d136f","ui_kits/portal-ci/Cronograma.jsx":"77d70fcd9b5c","ui_kits/portal-ci/Iniciativas.jsx":"386027995b6c","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"61de3f14de29","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/qa/mock-sb.js":"6f5dee4f37cd","ui_kits/portal-ci/qa/qa-runner.js":"23ce8d71022b","ui_kits/portal-ci/shared.jsx":"04cf7fced67e","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"99c3a4f49cb9"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -788,9 +788,26 @@ function App() {
   const prevRef = React.useRef({
     ...init
   });
-  const reloadFromRemote = React.useCallback(async () => {
+  const retryRef = React.useRef(null);
+  const reloadFromRemote = React.useCallback(async function recarregar() {
+    // Se a pessoa gravou algo enquanto a leitura estava em andamento, a foto do banco está velha: descarta e lê de novo.
+    const ocupado = () => {
+      const e = window.PortalSync.estado();
+      return e.pend > 0 || Date.now() - e.lastWrite < 1200;
+    };
+    if (synced.current && ocupado()) {
+      clearTimeout(retryRef.current);
+      retryRef.current = setTimeout(recarregar, 1500);
+      return true;
+    }
+    const s0 = window.PortalSync.estado().seq;
     const d = await window.PortalSync.loadAll();
     if (!d) return false;
+    if (synced.current && (window.PortalSync.estado().seq !== s0 || ocupado())) {
+      clearTimeout(retryRef.current);
+      retryRef.current = setTimeout(recarregar, 1500);
+      return true;
+    }
     applyingRemote.current = true;
     const full = {
       ...VAZIO,
@@ -915,6 +932,20 @@ function App() {
   });
   const isGestao = user.perfil === "Gestor" || user.perfil === "Administrador";
   const isAdmin = user.perfil === "Administrador";
+  const leitura = user.perfil === "Visualizador";
+  const RE_ESCRITA = /^(\+ ?)?(Nova|Novo|Lançar|Cadastrar|Salvar|Excluir|Registrar|Aceitar|Recusar|Concluir|Duplicar|Transformar|Assumir|Carregar dados)/i;
+  const guardaLeitura = e => {
+    if (!leitura) return;
+    const b = e.target.closest && e.target.closest("button");
+    if (!b) return;
+    const t = (b.textContent || "").trim();
+    const ic = b.title || b.getAttribute("aria-label") || "";
+    if (RE_ESCRITA.test(t) || /excluir|apagar|remover/i.test(ic)) {
+      e.preventDefault();
+      e.stopPropagation();
+      alert("Seu perfil é Visualizador: você pode ver tudo, mas não pode criar nem alterar.");
+    }
+  };
   const respAtual = P.respAtendimento(ausencias, P.TODAY);
   const podeAtender = isGestao || user.nome === respAtual;
   const iniById = id => inis.find(i => i.id === id) || {};
@@ -1134,12 +1165,24 @@ function App() {
       background: sync.state === "error" ? "var(--danger)" : sync.state === "saving" ? "var(--orange)" : "#2E9E5B"
     }
   }), sync.state === "error" ? "Erro ao salvar — " + (sync.msg || "") : sync.state === "saving" ? "Salvando…" : sync.state === "idle" ? "Conectando…" : "Sincronizado"), /*#__PURE__*/React.createElement("main", {
+    onClickCapture: guardaLeitura,
     style: {
       maxWidth: "var(--container-max)",
       margin: "0 auto",
       padding: 26
     }
-  }, view === "painel" && /*#__PURE__*/React.createElement(window.Painel, _extends({}, common, {
+  }, leitura && /*#__PURE__*/React.createElement("div", {
+    className: "no-print",
+    style: {
+      background: "var(--canvas)",
+      border: "1px solid var(--line)",
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 16,
+      fontSize: 13,
+      color: "var(--slate)"
+    }
+  }, "Perfil ", /*#__PURE__*/React.createElement("b", null, "Visualizador"), ": acesso somente para consulta."), view === "painel" && /*#__PURE__*/React.createElement(window.Painel, _extends({}, common, {
     chamados: chamados,
     podeAtender: podeAtender,
     respAtual: respAtual,
@@ -1319,6 +1362,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.c
 
 // ui_kits/portal-ci/Atendimentos.jsx
 try { (() => {
+const linkSeguro = u => {
+  const s = String(u || "").trim();
+  return /^https?:\/\/[^\s<>"]+$/i.test(s) ? s : null;
+};
 const urgChip = u => {
   const {
     Chip,
@@ -1394,6 +1441,7 @@ function NovoChamadoModal({
     urgencia: "Média",
     assunto: "",
     descricao: "",
+    link: "",
     whatsapp: "",
     solicitante: ""
   });
@@ -1475,6 +1523,14 @@ function NovoChamadoModal({
     value: f.descricao,
     onChange: e => set("descricao", e.target.value),
     placeholder: "O que precisa ser feito, para quem, onde ser\xE1 usado..."
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Link (opcional)"
+  }, /*#__PURE__*/React.createElement(Input, {
+    type: "url",
+    maxLength: 500,
+    value: f.link,
+    onChange: e => set("link", e.target.value),
+    placeholder: "https://... (pasta, arquivo, refer\xEAncia)"
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
@@ -2222,7 +2278,24 @@ function ChamadoDetalhe({
       color: "var(--ink)",
       whiteSpace: "pre-wrap"
     }
-  }, c.descricao || "—"), /*#__PURE__*/React.createElement("div", {
+  }, c.descricao || "—"), linkSeguro(c.link) && /*#__PURE__*/React.createElement("a", {
+    href: linkSeguro(c.link),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 10,
+      color: "var(--blue-dark)",
+      fontWeight: 700,
+      fontSize: 13,
+      wordBreak: "break-all"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "link",
+    size: 14
+  }), " ", c.link), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -4165,10 +4238,15 @@ const CANAIS_DEF = {
     path: ["revista", "edicoes"],
     campos: [["edicao", "Edição", "text"], ["pub", "Data de publicação", "date"], ["acessos", "Acessos / leituras", "number"]]
   },
+  news: {
+    titulo: "Na Direção News · edição",
+    path: ["news", "edicoes"],
+    campos: [["edicao", "Edição", "text"], ["pub", "Data de publicação", "date"], ["vInsta", "Visualizações (Instagram)", "number"], ["vLinkedin", "Visualizações (LinkedIn)", "number"], ["vEmail", "Visualizações (E-mail)", "number"]]
+  },
   instagram: {
     titulo: "Instagram · dados do mês",
     path: ["instagram", "mensal"],
-    campos: [["mes", "Mês", "month"], ["seguidores", "Seguidores", "number"], ["alcance", "Alcance", "number"], ["impressoes", "Impressões", "number"], ["engajamento", "Engajamento (%)", "number"]]
+    campos: [["mes", "Mês", "month"], ["seguidores", "Seguidores", "number"], ["alcance", "Alcance", "number"], ["impressoes", "Visualizações", "number"], ["engajamento", "Engajamento (%)", "number"]]
   },
   linkedin: {
     titulo: "LinkedIn · dados do mês",
@@ -4235,7 +4313,9 @@ function EvolucaoMensal({
   mensal,
   campo,
   color,
-  ano
+  ano,
+  sel,
+  onSel
 }) {
   const dados = MESES.map((_, i) => {
     const r = mensal.find(m => m.mes === `${ano}-${String(i + 1).padStart(2, "0")}`);
@@ -4248,47 +4328,82 @@ function EvolucaoMensal({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "flex",
+      alignItems: "baseline",
+      gap: 10,
+      marginBottom: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 12,
       fontWeight: 700,
-      color: "var(--slate)",
-      marginBottom: 8
+      color: "var(--slate)"
     }
   }, titulo, " \u2014 evolu\xE7\xE3o ", ano), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--muted)"
+    }
+  }, "Clique num m\xEAs para ver os dados dele"), sel && /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSel(null),
+    style: {
+      marginLeft: "auto",
+      background: "none",
+      border: "none",
+      color: "var(--blue-light)",
+      fontWeight: 700,
+      fontSize: 11.5,
+      cursor: "pointer",
+      fontFamily: "var(--font-sans)"
+    }
+  }, "Voltar ao \xFAltimo m\xEAs")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "flex-end",
       gap: 6,
       height: 96
     }
-  }, dados.map((v, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: "var(--slate)",
-      height: 11
-    }
-  }, v ? v >= 1000 ? Math.round(v / 100) / 10 + "k" : v : ""), /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: "100%",
-      height: Math.max(v / max * 62, 2),
-      background: v ? color : "var(--line)",
-      borderRadius: 3
-    },
-    title: v
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9.5,
-      color: "var(--muted)"
-    }
-  }, MESES[i])))));
+  }, dados.map((v, i) => {
+    const m = `${ano}-${String(i + 1).padStart(2, "0")}`;
+    const on = sel === m;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      onClick: () => onSel && onSel(on ? null : m),
+      title: MESES[i] + "/" + ano,
+      style: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: on ? "var(--ink)" : "var(--slate)",
+        fontWeight: on ? 800 : 400,
+        height: 11
+      }
+    }, v ? v >= 1000 ? Math.round(v / 100) / 10 + "k" : v : ""), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: "100%",
+        height: Math.max(v / max * 62, 2),
+        background: v ? color : "var(--line)",
+        borderRadius: 3,
+        opacity: sel && !on ? 0.4 : 1,
+        outline: on ? "2px solid var(--ink)" : "none",
+        outlineOffset: 1
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9.5,
+        color: on ? "var(--ink)" : "var(--muted)",
+        fontWeight: on ? 800 : 400
+      }
+    }, MESES[i]));
+  })));
 }
 function Canais({
   canais,
@@ -4312,12 +4427,20 @@ function Canais({
   const fileRef = React.useRef(null);
   const [importDef, setImportDef] = React.useState(null);
   const [msg, setMsg] = React.useState("");
+  const [sel, setSel] = React.useState({});
+  const selCanal = canal => m => setSel(s => ({
+    ...s,
+    [canal]: m
+  }));
   const C = {
     podcast: {
       mensal: [],
       episodios: []
     },
     revista: {
+      edicoes: []
+    },
+    news: {
       edicoes: []
     },
     instagram: {
@@ -4503,11 +4626,24 @@ function Canais({
       size: 14
     })))))))));
   };
-  const pM = ultimo(C.podcast.mensal),
-    iM = ultimo(C.instagram.mensal),
-    lM = ultimo(C.linkedin.mensal);
+  const pick = (canal, arr) => {
+    const m = sel[canal];
+    return m ? arr.find(x => x.mes === m) || {
+      mes: m
+    } : ultimo(arr);
+  };
+  const acum = (arr, campo, m) => m && m.mes ? arr.filter(x => x.mes && x.mes.slice(0, 4) === m.mes.slice(0, 4) && x.mes <= m.mes).reduce((s, x) => s + (Number(x[campo]) || 0), 0) : undefined;
+  const acumLabel = m => m && m.mes ? `Jan a ${MESES[Number(m.mes.slice(5, 7)) - 1]}/${m.mes.slice(0, 4)}` : "—";
+  const pM = pick("podcast", C.podcast.mensal),
+    iM = pick("instagram", C.instagram.mensal),
+    lM = pick("linkedin", C.linkedin.mensal);
   const mesLabel = m => m && m.mes ? `${MESES[Number(m.mes.slice(5, 7)) - 1]}/${m.mes.slice(0, 4)}` : "—";
   const ultEd = C.revista.edicoes.slice().sort((a, b) => String(a.pub).localeCompare(String(b.pub))).pop() || {};
+  const newsEd = C.news.edicoes.slice().sort((a, b) => String(a.pub).localeCompare(String(b.pub)));
+  const ultNews = newsEd[newsEd.length - 1] || {};
+  const newsAno = newsEd.filter(e => String(e.pub || "").slice(0, 4) === String(ano));
+  const somaNews = (arr, campo) => arr.reduce((s, e) => s + (Number(e[campo]) || 0), 0);
+  const totNews = e => (Number(e.vInsta) || 0) + (Number(e.vLinkedin) || 0) + (Number(e.vEmail) || 0);
   const bloco = {
     marginBottom: 30
   };
@@ -4568,14 +4704,14 @@ function Canais({
       fontSize: 12.5
     }
   }, msg), /*#__PURE__*/React.createElement(Select, {
-    value: ano,
+    value: String(ano),
     onChange: e => setAno(Number(e.target.value)),
     style: {
       width: 120
     }
-  }, [ano - 1, ano, ano + 1].filter((v, i, a) => a.indexOf(v) === i).map(y => /*#__PURE__*/React.createElement("option", {
+  }, [ano - 1, ano, ano + 1].map(y => /*#__PURE__*/React.createElement("option", {
     key: y,
-    value: y
+    value: String(y)
   }, y))))), /*#__PURE__*/React.createElement("div", {
     style: bloco
   }, head("Podcast Nosso Legado", "podcast_mensal", /*#__PURE__*/React.createElement(Button, {
@@ -4612,9 +4748,14 @@ function Canais({
     sub: mesLabel(pM),
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Views acumuladas",
+    value: num(acum(C.podcast.mensal, "views", pM)),
+    sub: acumLabel(pM),
+    color: "var(--nat-produto)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Tempo m\xE9dio",
     value: pM.tempoMedio || "—",
-    sub: "por epis\xF3dio",
+    sub: mesLabel(pM),
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Epis\xF3dios",
@@ -4630,7 +4771,9 @@ function Canais({
     mensal: C.podcast.mensal,
     campo: "views",
     color: "var(--nat-produto)",
-    ano: ano
+    ano: ano,
+    sel: sel.podcast,
+    onSel: selCanal("podcast")
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
@@ -4678,6 +4821,49 @@ function Canais({
     k: "revista"
   })), /*#__PURE__*/React.createElement("div", {
     style: bloco
+  }, head("Na Direção News", "news"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 14,
+      marginBottom: 14,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement(KpiCard, {
+    label: "\xDAltima edi\xE7\xE3o",
+    value: ultNews.edicao || "—",
+    sub: ultNews.pub ? fmtY(ultNews.pub) : "",
+    icon: /*#__PURE__*/React.createElement(Icon, {
+      name: "newspaper",
+      size: 16
+    })
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visualiza\xE7\xF5es (Instagram)",
+    value: num(ultNews.vInsta),
+    sub: ultNews.edicao ? "última edição" : "",
+    color: "var(--blue-light)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visualiza\xE7\xF5es (LinkedIn)",
+    value: num(ultNews.vLinkedin),
+    sub: ultNews.edicao ? "última edição" : "",
+    color: "var(--orange)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visualiza\xE7\xF5es (E-mail)",
+    value: num(ultNews.vEmail),
+    sub: ultNews.edicao ? "última edição" : "",
+    color: "var(--nat-produto)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Total acumulado " + ano,
+    value: num(newsAno.reduce((s, e) => s + totNews(e), 0)),
+    sub: `Insta ${num(somaNews(newsAno, "vInsta"))} · LinkedIn ${num(somaNews(newsAno, "vLinkedin"))} · E-mail ${num(somaNews(newsAno, "vEmail"))}`,
+    color: "var(--success)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Edi\xE7\xF5es",
+    value: C.news.edicoes.length,
+    sub: "cadastradas"
+  })), /*#__PURE__*/React.createElement(Tabela, {
+    k: "news"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: bloco
   }, head("Instagram", "instagram"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -4699,8 +4885,19 @@ function Canais({
     sub: mesLabel(iM),
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visualiza\xE7\xF5es",
+    value: num(iM.impressoes),
+    sub: mesLabel(iM),
+    color: "var(--nat-produto)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visualiza\xE7\xF5es acumuladas",
+    value: num(acum(C.instagram.mensal, "impressoes", iM)),
+    sub: acumLabel(iM),
+    color: "var(--nat-produto)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Engajamento",
     value: iM.engajamento !== undefined && iM.engajamento !== "" ? iM.engajamento + "%" : "—",
+    sub: mesLabel(iM),
     color: "var(--success)"
   })), /*#__PURE__*/React.createElement(Card, {
     style: {
@@ -4712,7 +4909,9 @@ function Canais({
     mensal: C.instagram.mensal,
     campo: "seguidores",
     color: "var(--blue-light)",
-    ano: ano
+    ano: ano,
+    sel: sel.instagram,
+    onSel: selCanal("instagram")
   })), /*#__PURE__*/React.createElement(Tabela, {
     k: "instagram"
   })), /*#__PURE__*/React.createElement("div", {
@@ -4738,8 +4937,14 @@ function Canais({
     sub: mesLabel(lM),
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Visitantes acumulados",
+    value: num(acum(C.linkedin.mensal, "visitantes", lM)),
+    sub: acumLabel(lM),
+    color: "var(--nat-produto)"
+  }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Engajamento",
     value: lM.engajamento !== undefined && lM.engajamento !== "" ? lM.engajamento + "%" : "—",
+    sub: mesLabel(lM),
     color: "var(--success)"
   })), /*#__PURE__*/React.createElement(Card, {
     style: {
@@ -4751,7 +4956,9 @@ function Canais({
     mensal: C.linkedin.mensal,
     campo: "seguidores",
     color: "var(--orange)",
-    ano: ano
+    ano: ano,
+    sel: sel.linkedin,
+    onSel: selCanal("linkedin")
   })), /*#__PURE__*/React.createElement(Tabela, {
     k: "linkedin"
   })), modal && /*#__PURE__*/React.createElement(InserirDadoModal, {
@@ -5078,6 +5285,7 @@ function CicloCard({
     TODAY,
     concluido
   } = window.PortalUI;
+  const lista = ativsCiclo.slice().sort((a, b) => String(a.raw.s || a.s || "9999").localeCompare(String(b.raw.s || b.s || "9999")) || String(a.raw.e || "").localeCompare(String(b.raw.e || "")) || (a.raw.criadoTs || 0) - (b.raw.criadoTs || 0));
   const conc = ativsCiclo.filter(e => concluido(e.status)).length;
   const pct = ativsCiclo.length ? conc / ativsCiclo.length : 0;
   const pa = (a, p) => patchAtiv(a.key, p);
@@ -5206,7 +5414,7 @@ function CicloCard({
   }, ["ID", "Atividade", "Início", "Fim", "Responsável", "Categoria", "Depende de", "Status", ""].map(h => /*#__PURE__*/React.createElement("th", {
     key: h,
     style: th
-  }, h)))), /*#__PURE__*/React.createElement("tbody", null, ativsCiclo.map((a, idx) => /*#__PURE__*/React.createElement("tr", {
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, lista.map((a, idx) => /*#__PURE__*/React.createElement("tr", {
     key: a.key,
     style: {
       borderTop: "1px solid var(--canvas)",
@@ -5298,9 +5506,9 @@ function CicloCard({
   }, /*#__PURE__*/React.createElement(DependenciaCell, {
     value: a.raw.dependeDe,
     aguardando: !!a.depAguardando,
-    options: ativsCiclo.filter(x => x.id !== a.id).map((x, i) => ({
+    options: lista.filter(x => x.id !== a.id).map((x, i) => ({
       id: x.id,
-      label: "E" + (ativsCiclo.indexOf(x) + 1) + " · " + x.titulo.slice(0, 14)
+      label: "E" + (lista.indexOf(x) + 1) + " · " + x.titulo.slice(0, 14)
     })),
     onChange: ev => pa(a, {
       dependeDe: ev.target.value
@@ -5373,7 +5581,7 @@ function NovoCicloModal({
   const baseIni = base && base.etapas.length ? base.etapas.reduce((m, e) => e.s && e.s < m ? e.s : m, base.etapas[0].s || TODAY) : TODAY;
   const [label, setLabel] = React.useState(sugerirNome());
   const [inicio, setInicio] = React.useState(base ? addDays(baseIni, 7) : TODAY);
-  const [etapas, setEtapas] = React.useState(base ? base.etapas.map(e => ({
+  const copiadas = base ? base.etapas.map(e => ({
     id: uid("E"),
     nome: e.nome,
     resp: e.resp,
@@ -5382,15 +5590,13 @@ function NovoCicloModal({
     cx: e.cx || "P",
     precisaAprovacao: !!e.precisaAprovacao,
     depIdx: e.dependeDe ? base.etapas.findIndex(x => x.id === e.dependeDe) : -1
-  })) : ETAPAS_PADRAO.map((n, i) => ({
-    id: uid("E"),
-    nome: n,
-    resp: iniciativa.resp,
-    dS: i,
-    dur: 0,
-    cx: "P",
-    depIdx: i - 1
-  })));
+  })) : [];
+  const [modo, setModo] = React.useState(base && copiadas.length ? "copiar" : "vazio");
+  const [etapas, setEtapas] = React.useState(base && copiadas.length ? copiadas : []);
+  const trocarModo = m => {
+    setModo(m);
+    setEtapas(m === "copiar" ? copiadas : []);
+  };
   const setEtapa = (id, k, v) => setEtapas(prev => prev.map(e => e.id === id ? {
     ...e,
     [k]: v
@@ -5424,7 +5630,7 @@ function NovoCicloModal({
   };
   return /*#__PURE__*/React.createElement(Modal, {
     title: base ? "Novo ciclo a partir do anterior" : "Novo ciclo",
-    sub: base ? `Copiamos as atividades de "${base.ciclo}". Ajuste responsáveis e a data de início — os prazos se ajustam sozinhos.` : "Cada ciclo (edição/período) tem sua lista de atividades.",
+    sub: modo === "copiar" ? `Copiamos as atividades de "${base.ciclo}". Ajuste responsáveis e a data de início — os prazos se ajustam sozinhos.` : "Cada ciclo (edição/período) tem sua lista de atividades. Elas aparecem ordenadas pela data de início.",
     onClose: onClose,
     width: 680
   }, /*#__PURE__*/React.createElement("div", {
@@ -5452,7 +5658,28 @@ function NovoCicloModal({
     type: "date",
     value: inicio,
     onChange: e => setInicio(e.target.value)
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), base && copiadas.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 12,
+      flexWrap: "wrap"
+    }
+  }, [["copiar", `Copiar atividades de "${base.ciclo}"`], ["vazio", "Começar vazio e lançar uma a uma"]].map(([v, l]) => /*#__PURE__*/React.createElement("button", {
+    key: v,
+    onClick: () => trocarModo(v),
+    style: {
+      padding: "8px 12px",
+      borderRadius: 8,
+      border: "1px solid " + (modo === v ? "var(--blue-dark)" : "var(--line)"),
+      background: modo === v ? "var(--soft-blue)" : "#fff",
+      color: modo === v ? "var(--blue-dark)" : "var(--slate)",
+      fontWeight: 700,
+      fontSize: 12.5,
+      cursor: "pointer",
+      fontFamily: "var(--font-sans)"
+    }
+  }, l))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       fontWeight: 700,
@@ -5461,7 +5688,13 @@ function NovoCicloModal({
       letterSpacing: ".3px",
       margin: "6px 0 8px"
     }
-  }, "Atividades do ciclo"), /*#__PURE__*/React.createElement("div", {
+  }, "Atividades do ciclo"), etapas.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: "var(--muted)",
+      marginBottom: 8
+    }
+  }, "Nenhuma atividade ainda. Crie o ciclo e lance as atividades uma a uma pelo bot\xE3o \"+ Atividade\" (elas ficam em ordem de data), ou adicione aqui."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,2fr) minmax(0,1.4fr) 120px 110px 28px",
@@ -9082,6 +9315,534 @@ window.Usuarios = Usuarios;
 window.AlterarSenhaModal = AlterarSenhaModal;
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/portal-ci/Usuarios.jsx", error: String((e && e.message) || e) }); }
 
+// ui_kits/portal-ci/qa/mock-sb.js
+try { (() => {
+// Supabase falso, em memória, para testes de QA. Emula: tabelas, RLS simples (perfil), latência, tempo real.
+(function () {
+  const q = new URLSearchParams(location.search);
+  const AS = q.get("as") || "sarah";
+  const LAT = Number(q.get("lat") || 400);
+  const USERS = [{
+    id: "u-amanda",
+    auth_user_id: "a-amanda",
+    nome: "Amanda Nunes",
+    cargo: "Coordenadora",
+    email: "amanda@x.com",
+    login: "amandagn",
+    perfil: "Administrador",
+    ativo: true,
+    precisa_trocar_senha: false
+  }, {
+    id: "u-sarah",
+    auth_user_id: "a-sarah",
+    nome: "Sarah Costa",
+    cargo: "Assistente",
+    email: "sarah@x.com",
+    login: "SarahC",
+    perfil: "Analista",
+    ativo: true,
+    precisa_trocar_senha: false
+  }, {
+    id: "u-andre",
+    auth_user_id: "a-andre",
+    nome: "André Koffer",
+    cargo: "Analista",
+    email: "andre@x.com",
+    login: "andre",
+    perfil: "Analista",
+    ativo: true,
+    precisa_trocar_senha: false
+  }, {
+    id: "u-vis",
+    auth_user_id: "a-vis",
+    nome: "Vera Visual",
+    cargo: "Diretoria",
+    email: "vera@x.com",
+    login: "vera",
+    perfil: "Visualizador",
+    ativo: true,
+    precisa_trocar_senha: false
+  }];
+  const DB = window.__DB = {
+    usuarios: USERS.map(u => ({
+      ...u
+    })),
+    iniciativas: [],
+    atividades: [],
+    lancamentos: [],
+    ciclos: [],
+    ciclo_etapas: [],
+    chamados: [],
+    chamado_atividades: [],
+    app_config: []
+  };
+  const me = () => USERS.find(u => u.login.toLowerCase().startsWith(AS.toLowerCase()) || u.id === "u-" + AS);
+  const LOG = window.__LOG = [];
+  const subs = [];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const podeEditar = () => ["Analista", "Gestor", "Administrador"].includes(me().perfil);
+  const FK = {
+    atividades: ["iniciativa_id", "iniciativas"],
+    lancamentos: ["iniciativa_id", "iniciativas"],
+    ciclos: ["iniciativa_id", "iniciativas"],
+    ciclo_etapas: ["ciclo_id", "ciclos"],
+    chamado_atividades: ["chamado_id", "chamados"]
+  };
+  const fire = (table, ev) => setTimeout(() => subs.forEach(s => s.table === table && s.cb({
+    eventType: ev,
+    table
+  })), 80);
+  window.__externalWrite = (table, row) => {
+    const t = DB[table];
+    const i = t.findIndex(x => x.id === row.id);
+    if (i >= 0) t[i] = row;else t.push(row);
+    fire(table, "INSERT");
+  };
+  function builder(table) {
+    let op = "select",
+      rows = null,
+      patch = null,
+      filters = [],
+      single = false;
+    const b = {
+      select() {
+        if (op !== "insert" && op !== "upsert" && op !== "update") op = "select";
+        return b;
+      },
+      insert(r) {
+        op = "insert";
+        rows = [].concat(r);
+        return b;
+      },
+      upsert(r) {
+        op = "upsert";
+        rows = [].concat(r);
+        return b;
+      },
+      update(p) {
+        op = "update";
+        patch = p;
+        return b;
+      },
+      delete() {
+        op = "delete";
+        return b;
+      },
+      eq(k, v) {
+        filters.push(x => x[k] === v);
+        return b;
+      },
+      in(k, arr) {
+        filters.push(x => arr.includes(x[k]));
+        return b;
+      },
+      or() {
+        return b;
+      },
+      order() {
+        return b;
+      },
+      limit() {
+        return b;
+      },
+      maybeSingle() {
+        single = true;
+        return b;
+      },
+      then(res, rej) {
+        return run().then(res, rej);
+      }
+    };
+    async function run() {
+      await sleep(op === "select" ? LAT : LAT / 2);
+      const t = DB[table];
+      const match = x => filters.every(f => f(x));
+      if (op === "select") {
+        const d = t.filter(match).map(x => JSON.parse(JSON.stringify(x)));
+        return {
+          data: single ? d[0] || null : d,
+          error: null
+        };
+      }
+      if (table !== "usuarios" && !podeEditar()) {
+        LOG.push({
+          table,
+          op,
+          err: "42501"
+        });
+        return {
+          data: null,
+          error: {
+            code: "42501",
+            message: "new row violates row-level security policy"
+          }
+        };
+      }
+      if (op === "insert") {
+        for (const r of rows) {
+          if (t.some(x => x.id === r.id)) {
+            LOG.push({
+              table,
+              op,
+              id: r.id,
+              err: "23505"
+            });
+            return {
+              data: null,
+              error: {
+                code: "23505",
+                message: "duplicate key"
+              }
+            };
+          }
+          const fk = FK[table];
+          if (fk && r[fk[0]] && !DB[fk[1]].some(x => x.id === r[fk[0]])) {
+            LOG.push({
+              table,
+              op,
+              id: r.id,
+              err: "23503"
+            });
+            return {
+              data: null,
+              error: {
+                code: "23503",
+                message: "fk"
+              }
+            };
+          }
+        }
+        rows.forEach(r => t.push(JSON.parse(JSON.stringify(r))));
+        LOG.push({
+          table,
+          op,
+          ids: rows.map(r => r.id)
+        });
+        fire(table, "INSERT");
+        return {
+          data: null,
+          error: null
+        };
+      }
+      if (op === "upsert") {
+        rows.forEach(r => {
+          const i = t.findIndex(x => x.id === r.id);
+          if (i >= 0) t[i] = {
+            ...t[i],
+            ...r
+          };else t.push(r);
+        });
+        LOG.push({
+          table,
+          op,
+          ids: rows.map(r => r.id)
+        });
+        fire(table, "UPDATE");
+        return {
+          data: null,
+          error: null
+        };
+      }
+      if (op === "update") {
+        t.filter(match).forEach(x => Object.assign(x, patch));
+        fire(table, "UPDATE");
+        return {
+          data: null,
+          error: null
+        };
+      }
+      if (op === "delete") {
+        const ids = t.filter(match).map(x => x.id);
+        DB[table] = t.filter(x => !match(x));
+        LOG.push({
+          table,
+          op,
+          ids
+        });
+        fire(table, "DELETE");
+        return {
+          data: null,
+          error: null
+        };
+      }
+    }
+    return b;
+  }
+  window.sb = {
+    from: builder,
+    rpc: async (fn, args) => {
+      await sleep(50);
+      if (fn === "email_do_login") {
+        const u = USERS.find(x => x.login.toLowerCase() === String(args.p_login).toLowerCase());
+        return {
+          data: u ? u.email : null
+        };
+      }
+      return {
+        data: null,
+        error: null
+      };
+    },
+    auth: {
+      getSession: async () => ({
+        data: {
+          session: {
+            user: {
+              id: me().auth_user_id
+            }
+          }
+        }
+      }),
+      signInWithPassword: async () => ({
+        data: {
+          user: {
+            id: me().auth_user_id
+          }
+        },
+        error: null
+      }),
+      signOut: async () => ({}),
+      updateUser: async () => ({
+        error: null
+      }),
+      onAuthStateChange: () => ({
+        data: {
+          subscription: {
+            unsubscribe() {}
+          }
+        }
+      })
+    },
+    channel() {
+      const ch = {
+        on(_e, f, cb) {
+          subs.push({
+            table: f.table,
+            cb
+          });
+          return ch;
+        },
+        subscribe() {
+          return ch;
+        }
+      };
+      return ch;
+    },
+    removeChannel() {},
+    functions: {
+      invoke: async () => ({
+        data: {
+          ok: true
+        }
+      })
+    }
+  };
+})();
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/portal-ci/qa/mock-sb.js", error: String((e && e.message) || e) }); }
+
+// ui_kits/portal-ci/qa/qa-runner.js
+try { (() => {
+// Roteiros de QA: rodam no qa.html, escrevem o resultado em #qa-out.
+(function () {
+  const T0 = Date.now();
+  window.__TRACE = [];
+  const tr = m => window.__TRACE.push(Date.now() - T0 + "ms " + m);
+  const hook = () => {
+    if (window.PortalSync && !window.PortalSync.__h) {
+      const la = window.PortalSync.loadAll;
+      window.PortalSync.loadAll = async () => {
+        tr("load start seq=" + window.PortalSync.estado().seq);
+        const r = await la();
+        tr("load end tarefas=" + (r && r.tarefas.length) + " seq=" + window.PortalSync.estado().seq);
+        return r;
+      };
+      window.PortalSync.__h = 1;
+    }
+  };
+  hook();
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const out = o => {
+    let el = document.getElementById("qa-out");
+    if (!el) {
+      el = document.createElement("pre");
+      el.id = "qa-out";
+      el.style.cssText = "position:fixed;left:8px;top:8px;z-index:99999;background:#111;color:#0f0;font:11px monospace;padding:10px;max-width:880px;max-height:90vh;overflow:auto;white-space:pre-wrap;margin:0";
+      document.body.appendChild(el);
+    }
+    el.textContent = typeof o === "string" ? o : JSON.stringify(o, null, 1);
+  };
+  const byText = (sel, t) => [...document.querySelectorAll(sel)].find(e => e.textContent.trim().includes(t));
+  const click = (sel, t) => {
+    let e = byText(sel, t);
+    if (!e) {
+      const xs = [...document.querySelectorAll("a,div,span,li,[role=button]")].filter(x => x.textContent.trim() === t);
+      e = xs[xs.length - 1];
+    }
+    if (!e) throw new Error("não achei: " + t);
+    e.click();
+  };
+  const setVal = (el, v) => {
+    const proto = el.tagName === "SELECT" ? HTMLSelectElement.prototype : el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, "value").set.call(el, v);
+    el.dispatchEvent(new Event(el.tagName === "SELECT" ? "change" : "input", {
+      bubbles: true
+    }));
+  };
+  const linhasUI = nome => [...document.querySelectorAll("input")].filter(i => i.value === nome).length;
+  const pronto = async () => {
+    hook();
+    for (let i = 0; i < 100 && !byText("button", "Iniciativas"); i++) await sleep(200);
+    await sleep(1500);
+  };
+  async function criarIni(nome, natureza) {
+    await pronto();
+    click("button", "Iniciativas");
+    await sleep(200);
+    click("button", "Nova iniciativa");
+    await sleep(200);
+    const modalInputs = [...document.querySelectorAll("input")].filter(i => !i.value && i.type !== "date");
+    setVal(modalInputs[modalInputs.length - 1], nome);
+    await sleep(50);
+    if (natureza) {
+      const s = [...document.querySelectorAll("select")].find(x => [...x.options].some(o => o.value === "Processo"));
+      setVal(s, natureza);
+      await sleep(50);
+    }
+    click("button", "Salvar");
+    await sleep(300);
+  }
+  window.__qa = {
+    async corrida() {
+      const r = {
+        cenario: "Sarah cria iniciativa e adiciona linha no cronograma enquanto outra pessoa grava"
+      };
+      await criarIni("Projeto QA");
+      click("button", "Projeto QA");
+      await sleep(300);
+      window.__externalWrite("iniciativas", {
+        id: "IN90",
+        nome: "Iniciativa da Amanda",
+        natureza: "Processo",
+        dados: {
+          id: "IN90",
+          nome: "Iniciativa da Amanda",
+          natureza: "Processo"
+        }
+      });
+      await sleep(750);
+      click("button", "Nova atividade");
+      tr("CLICK nova atividade");
+      r.uiLogoApos = linhasUI("Nova atividade");
+      await sleep(5000);
+      r.trace = window.__TRACE.slice();
+      r.uiDepoisDe5s = linhasUI("Nova atividade");
+      r.dbAtividades = window.__DB.atividades.map(a => a.id + " ini=" + a.iniciativa_id);
+      r.dbIniciativas = window.__DB.iniciativas.map(a => a.id + " " + a.nome);
+      r.erros = window.__LOG.filter(l => l.err);
+      r.selo = byText("div", "Sincronizado") ? "Sincronizado" : byText("div", "Erro ao salvar") ? byText("div", "Erro ao salvar").textContent : "?";
+      r.OK = r.uiDepoisDe5s === 1 && r.dbAtividades.length === 1;
+      out(r);
+      return r;
+    },
+    async rapido() {
+      const r = {
+        cenario: "3 linhas seguidas + edição imediata, com outra pessoa gravando no meio"
+      };
+      await criarIni("Projeto QA2");
+      click("button", "Projeto QA2");
+      await sleep(300);
+      for (let i = 0; i < 3; i++) {
+        click("button", "Nova atividade");
+        await sleep(250);
+        if (i === 1) window.__externalWrite("iniciativas", {
+          id: "IN91",
+          nome: "Outra",
+          natureza: "Processo",
+          dados: {
+            id: "IN91",
+            nome: "Outra",
+            natureza: "Processo"
+          }
+        });
+      }
+      const inp = [...document.querySelectorAll("input")].filter(i => i.value === "Nova atividade");
+      if (inp[0]) setVal(inp[0], "Editada pela Sarah");
+      await sleep(6000);
+      r.uiNovas = linhasUI("Nova atividade");
+      r.uiEditada = linhasUI("Editada pela Sarah");
+      r.db = window.__DB.atividades.map(a => a.nome);
+      r.erros = window.__LOG.filter(l => l.err);
+      r.OK = r.db.length === 3 && r.db.includes("Editada pela Sarah") && r.uiNovas + r.uiEditada === 3;
+      out(r);
+      return r;
+    },
+    async lancar() {
+      const r = {
+        cenario: "Lançar atividade (Atividades) numa produção com ciclo novo"
+      };
+      await criarIni("Produção QA", "Produto");
+      click("button", "Atividades");
+      await sleep(300);
+      const b = byText("button", "Lançar") || byText("button", "Nova atividade");
+      b.click();
+      await sleep(300);
+      const sIni = [...document.querySelectorAll("select")].find(s => [...s.options].some(o => o.textContent.includes("Produção QA")));
+      setVal(sIni, [...sIni.options].find(o => o.textContent.includes("Produção QA")).value);
+      await sleep(200);
+      const nome = [...document.querySelectorAll("input")].find(i => (i.placeholder || "").includes("coffee"));
+      setVal(nome, "Atividade lançada QA");
+      await sleep(50);
+      const novoCiclo = [...document.querySelectorAll("input")].find(i => /Ed\.|ciclo|edi/i.test(i.placeholder || ""));
+      if (novoCiclo) setVal(novoCiclo, "Ed. QA");
+      const cat = byText("button", "Operacional") || byText("button", "P ·");
+      if (cat) cat.click();
+      await sleep(100);
+      const salvar = [...document.querySelectorAll("button")].reverse().find(x => /^(Salvar|Lançar|Adicionar)/.test(x.textContent.trim()));
+      r.botao = salvar && salvar.textContent.trim();
+      salvar.click();
+      await sleep(5000);
+      r.dbCiclos = window.__DB.ciclos.map(c => c.id + " " + c.ciclo + " ini=" + c.iniciativa_id);
+      r.dbEtapas = window.__DB.ciclo_etapas.map(e => e.nome + " ciclo=" + e.ciclo_id + " criadoPor=" + (e.dados && e.dados.criadoPor));
+      r.erros = window.__LOG.filter(l => l.err);
+      r.OK = r.dbEtapas.some(x => x.startsWith("Atividade lançada QA"));
+      out(r);
+      return r;
+    },
+    async todos() {
+      const res = [];
+      for (const k of ["corrida", "rapido", "lancar"]) {
+        try {
+          res.push(await window.__qa[k]());
+        } catch (e) {
+          res.push({
+            cenario: k,
+            FALHA: e.message
+          });
+        }
+      }
+      out(res);
+      return res;
+    },
+    async visualizador() {
+      const r = {
+        cenario: "Visualizador tenta criar iniciativa"
+      };
+      try {
+        await criarIni("Tentativa Vis");
+      } catch (e) {
+        r.ui = "bloqueado na tela: " + e.message;
+      }
+      await sleep(2500);
+      r.db = window.__DB.iniciativas.length;
+      r.erros = window.__LOG.filter(l => l.err);
+      r.selo = byText("div", "Erro ao salvar") ? byText("div", "Erro ao salvar").textContent : "sem erro visível";
+      out(r);
+      return r;
+    }
+  };
+})();
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/portal-ci/qa/qa-runner.js", error: String((e && e.message) || e) }); }
+
 // ui_kits/portal-ci/shared.jsx
 try { (() => {
 /* Shared data model, helpers and cross-screen components for the Portal CI UI kit. */
@@ -9360,7 +10121,7 @@ function todasAtividades({
 }) {
   const ini = id => inis.find(i => i.id === id) || {};
   const out = [];
-  (tarefas || []).filter(t => t.nivel !== 0).forEach(t => out.push({
+  (tarefas || []).forEach(t => out.push({
     key: "tar:" + t.id,
     kind: "tar",
     grupoId: t.ini,
@@ -9473,9 +10234,13 @@ const confirmaResp = (ausencias, nome, s, e) => {
   return !a || confirm(`${nomeCurto(nome)} estará ausente (${(a.tipo || "ausência").toLowerCase()}) de ${fmtY(a.de)} a ${fmtY(a.ate)}. Direcionar mesmo assim?`);
 };
 const ausenciaAtiva = (ausencias, nome, data) => (ausencias || []).find(a => a.nome === nome && inRange(data || TODAY, a.de, a.ate));
-const nextIniId = inis => "IN" + String(inis.reduce((m, i) => Math.max(m, parseInt(String(i.id).replace(/\D/g, ""), 10) || 0), 0) + 1).padStart(2, "0");
+const seqDe = (id, p) => {
+  const m = new RegExp("^" + p + "(\\d+)").exec(String(id));
+  return m ? parseInt(m[1], 10) : 0;
+};
+const nextIniId = inis => "IN" + String(inis.reduce((m, i) => Math.max(m, seqDe(i.id, "IN")), 0) + 1).padStart(2, "0") + "-" + rnd(2);
 const FORMATOS = [["Atendimento", "Pontual", "Fica só em Atendimentos — entrega única."], ["Projeto", "Projeto", "Tem começo, meio e fim — vira um cronograma."], ["Produto", "Produção", "Vai se repetir em ciclos/edições."], ["Processo", "Processo", "Vira uma rotina da equipe."]];
-const nextChamadoId = chamados => "AT" + String(chamados.reduce((m, c) => /^AT\d+$/.test(c.id) ? Math.max(m, parseInt(c.id.slice(2), 10)) : m, 0) + 1).padStart(4, "0");
+const nextChamadoId = chamados => "AT" + String(chamados.reduce((m, c) => Math.max(m, seqDe(c.id, "AT")), 0) + 1).padStart(4, "0") + "-" + rnd(2);
 const linkChamado = token => new URL("chamado.html" + (token ? "?c=" + token : ""), location.href).href;
 function waLink(phone, msg) {
   let d = String(phone || "").replace(/\D/g, "");
@@ -10699,6 +11464,9 @@ const CANAIS_VAZIO = {
   revista: {
     edicoes: []
   },
+  news: {
+    edicoes: []
+  },
   instagram: {
     mensal: []
   },
@@ -10803,7 +11571,8 @@ const j = v => v === "" || v === undefined ? null : v;
 
 // ---- status para a UI (App.jsx escuta "portal-sync") ----
 let pend = 0,
-  lastWrite = 0;
+  lastWrite = 0,
+  seq = 0;
 const emit = detail => window.dispatchEvent(new CustomEvent("portal-sync", {
   detail
 }));
@@ -10819,6 +11588,7 @@ const msgErro = e => ERROS[e && e.code] || e && e.message || String(e);
 let fila = Promise.resolve();
 function enfileirar(fn) {
   pend++;
+  seq++;
   lastWrite = Date.now();
   emit({
     state: "saving"
@@ -10896,7 +11666,7 @@ const mapOutTarefa = t => ({
   e: j(t.e),
   pct: Number(t.pct) || 0,
   status: j(t.status),
-  nivel: Number(t.nivel) || 0,
+  nivel: Number(t.nivel) || 1,
   dependencia: j(t.dependencia),
   precisa_aprovacao: !!t.precisaAprovacao,
   aprovador1: j(t.aprovador1),
@@ -11314,7 +12084,13 @@ const adminResetarSenha = usuario_id => chamarAdmin({
   action: "resetar_senha",
   usuario_id
 });
+const estado = () => ({
+  pend,
+  seq,
+  lastWrite
+});
 window.PortalSync = {
+  estado,
   authRestore,
   onSignedOut,
   loadAll,

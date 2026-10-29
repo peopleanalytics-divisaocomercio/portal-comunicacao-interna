@@ -92,7 +92,7 @@ function votar(r, aprovador, ok, por, print, comentario) {
 function todasAtividades({ inis, tarefas, ciclos, chamados, lanc }) {
   const ini = (id) => inis.find((i) => i.id === id) || {};
   const out = [];
-  (tarefas || []).filter((t) => t.nivel !== 0).forEach((t) => out.push({ key: "tar:" + t.id, kind: "tar", grupoId: t.ini, id: t.id, iniId: t.ini, titulo: t.nome, grupo: ini(t.ini).nome, sub: "", resp: t.resp, s: t.s, e: t.e || t.s, status: t.status, nat: "Projeto", cx: t.cx || "P", raw: t }));
+  (tarefas || []).forEach((t) => out.push({ key: "tar:" + t.id, kind: "tar", grupoId: t.ini, id: t.id, iniId: t.ini, titulo: t.nome, grupo: ini(t.ini).nome, sub: "", resp: t.resp, s: t.s, e: t.e || t.s, status: t.status, nat: "Projeto", cx: t.cx || "P", raw: t }));
   (ciclos || []).forEach((c) => (c.etapas || []).forEach((e) => out.push({ key: "eta:" + c.id + ":" + e.id, kind: "eta", grupoId: c.id, id: e.id, cicloId: c.id, iniId: c.ini, titulo: e.nome, grupo: ini(c.ini).nome, sub: "Ciclo " + c.ciclo, resp: e.resp, s: e.s, e: e.e || e.s, status: e.status, nat: ini(c.ini).natureza || "Produto", cx: e.cx || "P", raw: e })));
   (chamados || []).forEach((c) => (c.atividades || []).forEach((a) => out.push({ key: "cha:" + c.id + ":" + a.id, kind: "cha", grupoId: c.id, id: a.id, chamadoId: c.id, iniId: null, titulo: a.nome, grupo: "Atendimento " + c.id, sub: c.assunto, resp: a.resp, s: a.s, e: a.e || a.s, status: a.status, nat: "Atendimento", cx: a.cx || "P", raw: a })));
   (lanc || []).forEach((l) => { const s = l.pedido || l.dataPub || l.prazo; out.push({ key: "lan:" + l.id, kind: "lan", grupoId: l.ini, id: l.id, iniId: l.ini, titulo: l.titulo, grupo: ini(l.ini).nome, sub: "", resp: l.resp, s, e: l.prazo || l.dataPub || s, status: l.status, nat: ini(l.ini).natureza || "Processo", cx: l.cx || "P", raw: l }); });
@@ -127,9 +127,10 @@ const ausenteEm = (ausencias, nome, s, e) => (ausencias || []).find((a) => a.nom
 const rotuloResp = (u, ausencias, s, e) => { const a = ausenteEm(ausencias, u.nome, s, e); return a ? `${u.nome} — ${(a.tipo || "ausente").toLowerCase()} ${fmt(a.de)} a ${fmt(a.ate)}` : u.nome; };
 const confirmaResp = (ausencias, nome, s, e) => { const a = nome && ausenteEm(ausencias, nome, s, e); return !a || confirm(`${nomeCurto(nome)} estará ausente (${(a.tipo || "ausência").toLowerCase()}) de ${fmtY(a.de)} a ${fmtY(a.ate)}. Direcionar mesmo assim?`); };
 const ausenciaAtiva = (ausencias, nome, data) => (ausencias || []).find((a) => a.nome === nome && inRange(data || TODAY, a.de, a.ate));
-const nextIniId = (inis) => "IN" + String(inis.reduce((m, i) => Math.max(m, parseInt(String(i.id).replace(/\D/g, ""), 10) || 0), 0) + 1).padStart(2, "0");
+const seqDe = (id, p) => { const m = new RegExp("^" + p + "(\\d+)").exec(String(id)); return m ? parseInt(m[1], 10) : 0; };
+const nextIniId = (inis) => "IN" + String(inis.reduce((m, i) => Math.max(m, seqDe(i.id, "IN")), 0) + 1).padStart(2, "0") + "-" + rnd(2);
 const FORMATOS = [["Atendimento", "Pontual", "Fica só em Atendimentos — entrega única."], ["Projeto", "Projeto", "Tem começo, meio e fim — vira um cronograma."], ["Produto", "Produção", "Vai se repetir em ciclos/edições."], ["Processo", "Processo", "Vira uma rotina da equipe."]];
-const nextChamadoId = (chamados) => "AT" + String(chamados.reduce((m, c) => (/^AT\d+$/.test(c.id) ? Math.max(m, parseInt(c.id.slice(2), 10)) : m), 0) + 1).padStart(4, "0");
+const nextChamadoId = (chamados) => "AT" + String(chamados.reduce((m, c) => Math.max(m, seqDe(c.id, "AT")), 0) + 1).padStart(4, "0") + "-" + rnd(2);
 const linkChamado = (token) => new URL("chamado.html" + (token ? "?c=" + token : ""), location.href).href;
 function waLink(phone, msg) {
   let d = String(phone || "").replace(/\D/g, "");
@@ -399,6 +400,6 @@ function gerarExemplo() {
     },
   };
 }
-const CANAIS_VAZIO = { podcast: { mensal: [], episodios: [] }, revista: { edicoes: [] }, instagram: { mensal: [] }, linkedin: { mensal: [] } };
+const CANAIS_VAZIO = { podcast: { mensal: [], episodios: [] }, revista: { edicoes: [] }, news: { edicoes: [] }, instagram: { mensal: [] }, linkedin: { mensal: [] } };
 
 window.PortalUI = { novoToken, TODAY, AREAS, CATEGORIAS, catLabel, NAT_LABEL, STATUS_ATV, URGENCIAS, URG_COLOR, STATUS_CHAMADO, TIPOS_ATENDIMENTO, TIPOS_MARCO, concluido, D, fmt, fmtY, fmtPeriodo, daysBetween, addDays, mondayOf, inRange, overlaps, uid, agora, nomeCurto, monthGrid, exportCSV, parseCSV, ETAPAS_PADRAO, gerarSenha, USERS0, MICHELE, JULIANA, SARAH, ANDRE, APROVADORES, APROVADOR1, APROVADOR2, GESTORA_ATENDIMENTO, aplicarPatch, aprovStatus, enviarAprovacao, votar, todasAtividades, respAtendimento, ausenciaAtiva, TIPOS_AUSENCIA, ausenteEm, rotuloResp, confirmaResp, nextChamadoId, nextIniId, FORMATOS, linkChamado, waLink, gerarNotificacoes, gerarExemplo, CANAIS_VAZIO, Icon, Chip, NatChip, AprovChip, HistoricoLista, HistoricoModal, AprovacaoBloco, AtividadeDetalheModal, CategoriaPicker, F, inputBase, secTitle };
