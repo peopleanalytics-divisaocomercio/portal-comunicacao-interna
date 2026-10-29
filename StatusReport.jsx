@@ -6,7 +6,7 @@ function StatusReport({ inis, lanc, tarefas, iniById, chamados, canais }) {
   const [fDe, setFDe] = React.useState("");
   const [fAte, setFAte] = React.useState("");
 
-  const respostas = Array.from(new Set(inis.map((i) => i.resp)));
+  const respostas = Array.from(new Set([...lanc, ...tarefas].map((x) => x.resp).filter(Boolean))).sort();
   const dataDe = (x) => x.dataPub || x.entrega || x.prazo || x.s || "0000-00-00";
   const passa = (x, resp) => (!fIni || x.ini === fIni) && (!fResp || resp === fResp) && (!fDe || dataDe(x) >= fDe) && (!fAte || dataDe(x) <= fAte);
 

@@ -162,7 +162,7 @@ function App() {
     { key: "painel", label: "Visão Geral", icon: navIcon("painel", "layout-dashboard") },
     { key: "iniciativas", label: "Iniciativas", icon: navIcon("iniciativas", "folder-kanban") },
     { key: "atividades", label: "Atividades", icon: navIcon("atividades", "calendar-days") },
-    ...(podeAtender ? [{ key: "atendimentos", label: "Atendimentos", icon: navIcon("atendimentos", "headset") }] : []),
+    { key: "atendimentos", label: "Atendimentos", icon: navIcon("atendimentos", "headset") },
     { key: "canais", label: "Canais", icon: navIcon("canais", "radio") },
     ...(isGestao ? [{ key: "usuarios", label: "Usuários", icon: navIcon("usuarios", "users") }] : []),
     { key: "report", label: "Report", icon: navIcon("report", "file-text") },
@@ -184,7 +184,7 @@ function App() {
         {view === "iniciativas" && <window.Iniciativas {...common} setInis={setInis} onOpen={onOpen} fNat={fNatIni} setFNat={setFNatIni} chamados={chamados} podeAtender={podeAtender} onAbrirChamado={(id) => { setChamadoFoco(id); setView("atendimentos"); }} />}
         {view === "atividades" && <window.Atividades {...common} tarefas={tarefas} setTarefas={setTarefas} ciclos={ciclos} setCiclos={setCiclos} marcos={marcos} setMarcos={setMarcos} />}
         {view === "cronograma" && <window.Cronograma {...common} selIni={selIni || (inis[0] || {}).id} setSelIni={setSelIni} tarefas={tarefas} setTarefas={setTarefas} ciclos={ciclos} setCiclos={setCiclos} onBack={() => setView(prevView)} />}
-        {view === "atendimentos" && podeAtender && <window.Atendimentos {...common} chamados={chamados} setChamados={setChamados} setInis={setInis} setTarefas={setTarefas} ciclos={ciclos} setCiclos={setCiclos} onAbrirIni={onOpen} respAtual={respAtual} isGestao={isGestao} isAdmin={isAdmin} foco={chamadoFoco} setFoco={setChamadoFoco} />}
+        {view === "atendimentos" && <window.Atendimentos {...common} chamados={chamados} setChamados={setChamados} setInis={setInis} setTarefas={setTarefas} ciclos={ciclos} setCiclos={setCiclos} onAbrirIni={onOpen} respAtual={respAtual} isGestao={isGestao} isAdmin={isAdmin} foco={chamadoFoco} setFoco={setChamadoFoco} />}
         {view === "canais" && <window.Canais canais={canais} setCanais={setCanais} />}
         {view === "usuarios" && <window.Usuarios users={users} setUsers={setUsers} />}
         {view === "usuarios" && isAdmin && (

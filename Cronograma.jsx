@@ -192,7 +192,7 @@ function Cronograma({ inis, selIni, setSelIni, tarefas, setTarefas, ciclos, setC
           <Button variant="primary" icon={<Icon name="plus-circle" size={15} />} onClick={() => setNovoCiclo({ base: ultimo || null })}>{ultimo ? "Novo ciclo (copiar último)" : "Novo ciclo"}</Button>
         </Header>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, fontFamily: "var(--font-sans)", flexWrap: "wrap" }}>
-          <div style={{ fontWeight: 800, fontSize: 17 }}>{item.nome}</div><NatureBadge nature={item.natureza} /><StatusBadge status={item.status} /><span style={{ fontSize: 12.5, color: "var(--slate)" }}>Responsável: {nomeCurto(item.resp)} · {ciclosIni.length} ciclo(s)</span>
+          <div style={{ fontWeight: 800, fontSize: 17 }}>{item.nome}</div><NatureBadge nature={item.natureza} /><StatusBadge status={item.status} /><span style={{ fontSize: 12.5, color: "var(--slate)" }}>{ciclosIni.length} ciclo(s)</span>
         </div>
         {ciclosIni.length === 0 && <Card style={{ padding: 30, textAlign: "center", color: "var(--muted)" }}>Nenhum ciclo cadastrado ainda. Clique em "Novo ciclo".</Card>}
         {ciclosIni.slice().reverse().map((c) => <CicloCard key={c.id} ciclo={c} ativsCiclo={ativs.filter((a) => a.cicloId === c.id)} users={users} user={user} ausencias={ausencias} patchAtiv={patchAtiv} abrirAtiv={abrirAtiv} setCiclos={setCiclos} onDuplicar={(base) => setNovoCiclo({ base })} />)}
@@ -219,7 +219,7 @@ function Cronograma({ inis, selIni, setSelIni, tarefas, setTarefas, ciclos, setC
           <div style={{ fontWeight: 800, fontSize: 17 }}>{item.nome}</div><NatureBadge nature="Projeto" /><StatusBadge status={item.status} />
         </div>
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap", fontFamily: "var(--font-sans)" }}>
-          <Stat label="Início" val={fmtY(item.ini)} /><Stat label="Fim previsto" val={fmtY(item.fim)} /><Stat label="Duração" val={dur + " dias"} /><Stat label="Atividades" val={ts.length} /><Stat label="Responsável" val={nomeCurto(item.resp)} />
+          <Stat label="Início" val={fmtY(item.ini)} /><Stat label="Fim previsto" val={fmtY(item.fim)} /><Stat label="Duração" val={dur + " dias"} /><Stat label="Atividades" val={ts.length} />
           <div><div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>Conclusão</div><ProgressBar pct={pct} color="var(--nat-projeto)" width={100} /></div>
         </div>
       </Card>

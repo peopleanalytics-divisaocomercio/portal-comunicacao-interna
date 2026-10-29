@@ -69,13 +69,13 @@ function Shell({ children, sub }) {
 function Formulario() {
   const { Card, Field, Input, Select, Button } = window.PortalCIGABComRcioDesignSystem_6ad0f7;
   const P = window.PortalUI;
-  const [f, setF] = React.useState({ solicitante: "", area: P.AREAS[0], whatsapp: "", tipo: P.TIPOS_ATENDIMENTO[0], assunto: "", descricao: "", urgencia: "Média" });
+  const [f, setF] = React.useState({ solicitante: "", area: "", whatsapp: "", tipo: P.TIPOS_ATENDIMENTO[0], assunto: "", descricao: "", urgencia: "Média" });
   const [enviando, setEnviando] = React.useState(false);
   const [erro, setErro] = React.useState("");
   const [criado, setCriado] = React.useState(null);
   const [copiado, setCopiado] = React.useState(false);
   const set = (k, v) => setF({ ...f, [k]: v });
-  const ok = f.solicitante && f.whatsapp && f.assunto && f.descricao;
+  const ok = f.solicitante && f.whatsapp && f.area.trim() && f.assunto && f.descricao;
   const enviar = async () => { if (!ok || enviando) return; setEnviando(true); setErro(""); try { setCriado(await criarChamado(f)); } catch (e) { setErro(e && /Muitos|longo|Preencha/.test(e.message || "") ? e.message : "Não foi possível enviar agora. Tente novamente em instantes."); } setEnviando(false); };
   React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
   if (criado) {
@@ -105,7 +105,7 @@ function Formulario() {
           <div style={{ flex: "1 1 220px" }}><Field label="Seu WhatsApp"><Input value={f.whatsapp} maxLength={30} inputMode="tel" onChange={(e) => set("whatsapp", e.target.value)} placeholder="(27) 99999-9999" /></Field></div>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 220px" }}><Field label="Área / empresa"><Select value={f.area} onChange={(e) => set("area", e.target.value)}>{P.AREAS.map((a) => <option key={a}>{a}</option>)}</Select></Field></div>
+          <div style={{ flex: "1 1 220px" }}><Field label="Sua área / empresa"><Input value={f.area} maxLength={120} onChange={(e) => set("area", e.target.value)} placeholder="ex.: RH Kurumá, Vendas Vitória Motors" /></Field></div>
           <div style={{ flex: "1 1 220px" }}><Field label="Tipo de pedido"><Select value={f.tipo} onChange={(e) => set("tipo", e.target.value)}>{P.TIPOS_ATENDIMENTO.map((t) => <option key={t}>{t}</option>)}</Select></Field></div>
         </div>
         <Field label="Assunto"><Input value={f.assunto} maxLength={200} onChange={(e) => set("assunto", e.target.value)} placeholder="ex.: Vídeo para a convenção de vendas" /></Field>

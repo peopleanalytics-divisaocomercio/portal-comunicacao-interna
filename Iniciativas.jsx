@@ -15,8 +15,8 @@ function Iniciativas({ inis, setInis, ativs, users, user, onOpen, fNat, setFNat,
 
   const exportar = () => {
     const ini = mesExp + "-01", fim = mesExp + "-31";
-    exportCSV(`iniciativas-${mesExp}.csv`, ["ID", "Iniciativa", "Natureza", "Origem", "Área demandante", "Responsável", "Status", "Atividades no mês", "P · Operacional", "M · Tático", "G · Estratégico", "Concluídas no mês", "Atrasadas"],
-      filtered.map((i) => { const no = ativs.filter((a) => a.iniId === i.id && P.overlaps(a.s, a.e, ini, fim)); return [i.id, i.nome, P.NAT_LABEL[i.natureza], i.origem, i.area || "", i.resp, i.status, no.length, no.filter((a) => a.cx === "P").length, no.filter((a) => a.cx === "M").length, no.filter((a) => a.cx === "G").length, no.filter((a) => P.concluido(a.status)).length, no.filter((a) => a.atrasada).length]; }));
+    exportCSV(`iniciativas-${mesExp}.csv`, ["ID", "Iniciativa", "Natureza", "Origem", "Área demandante", "Status", "Atividades no mês", "P · Operacional", "M · Tático", "G · Estratégico", "Concluídas no mês", "Atrasadas"],
+      filtered.map((i) => { const no = ativs.filter((a) => a.iniId === i.id && P.overlaps(a.s, a.e, ini, fim)); return [i.id, i.nome, P.NAT_LABEL[i.natureza], i.origem, i.area || "", i.status, no.length, no.filter((a) => a.cx === "P").length, no.filter((a) => a.cx === "M").length, no.filter((a) => a.cx === "G").length, no.filter((a) => P.concluido(a.status)).length, no.filter((a) => a.atrasada).length]; }));
   };
 
   return (
@@ -70,7 +70,7 @@ function Iniciativas({ inis, setInis, ativs, users, user, onOpen, fNat, setFNat,
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, fontFamily: "var(--font-sans)" }}>
             <thead><tr style={{ background: "var(--canvas)", textAlign: "left", color: "var(--slate)" }}>
-              {["Iniciativa", "Natureza", "Origem", "Atividades P · M · G", "Responsável", "Status", ""].map((h) => <th key={h} style={{ padding: "11px 12px", fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".3px" }}>{h}</th>)}
+              {["Iniciativa", "Natureza", "Origem", "Atividades P · M · G", "Status", ""].map((h) => <th key={h} style={{ padding: "11px 12px", fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".3px" }}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.map((i) => (
@@ -79,8 +79,7 @@ function Iniciativas({ inis, setInis, ativs, users, user, onOpen, fNat, setFNat,
                   <td style={{ padding: "11px 12px" }}><NatureBadge nature={i.natureza} /></td>
                   <td style={{ padding: "11px 12px" }}>{i.origem === "Outra área" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--orange)", fontWeight: 600 }}><Icon name="building-2" size={13} /> Apoio · {i.area}</span> : <span style={{ color: "var(--slate)" }}>Própria</span>}</td>
                   <td style={{ padding: "11px 12px" }}>{(() => { const xs = ativs.filter((a) => a.iniId === i.id); return <span style={{ display: "inline-flex", gap: 4 }}>{["P", "M", "G"].map((k) => <span key={k} title={P.catLabel(k)} style={{ fontSize: 11, fontWeight: 700, background: "var(--canvas)", color: "var(--blue-dark)", padding: "3px 8px", borderRadius: 20 }}>{k} {xs.filter((a) => a.cx === k).length}</span>)}</span>; })()}</td>
-                  <td style={{ padding: "11px 12px", color: "var(--slate)" }}>{nomeCurto(i.resp)}</td>
-                  <td style={{ padding: "11px 12px" }}><StatusBadge status={i.status} /></td>
+                                    <td style={{ padding: "11px 12px" }}><StatusBadge status={i.status} /></td>
                   <td style={{ padding: "11px 12px" }}>
                     <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
                       <button onClick={() => onOpen(i.id)} style={{ color: "var(--blue-light)", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 12.5, fontFamily: "var(--font-sans)", whiteSpace: "nowrap" }}>{i.natureza === "Projeto" ? "Cronograma →" : "Ciclos →"}</button>
@@ -104,19 +103,18 @@ function Iniciativas({ inis, setInis, ativs, users, user, onOpen, fNat, setFNat,
 function IniciativaModal({ initial, nextId, users, onSave, onClose }) {
   const { Field, Input, Select, Modal, Button } = window.PortalCIGABComRcioDesignSystem_6ad0f7;
   const { AREAS } = window.PortalUI;
-  const [f, setF] = React.useState(initial || { nome: "", natureza: "Projeto", origem: "Própria", area: AREAS[0], resp: "" });
+  const [f, setF] = React.useState(initial || { nome: "", natureza: "Projeto", origem: "Própria", area: "" });
   const set = (k, v) => setF({ ...f, [k]: v });
-  const salvar = () => { if (!f.nome) return; onSave({ ...f, id: initial ? initial.id : nextId, status: f.status || (f.natureza === "Projeto" ? "Não iniciado" : "Ativo") }); };
+  const salvar = () => { if (!f.nome) return; onSave({ ...f, resp: "", id: initial ? initial.id : nextId, status: f.status || (f.natureza === "Projeto" ? "Não iniciado" : "Ativo") }); };
   const dica = { Projeto: "Tem começo, meio e fim. As atividades ficam num cronograma com datas.", Produto: "Se repete em ciclos/edições (ex.: podcast, revista, Ação 3x). Cada novo ciclo copia as atividades do anterior.", Processo: "Rotina fora de um projeto (ex.: atualização de grupos de e-mail, lista de aniversariantes). Também funciona em ciclos." }[f.natureza];
   return (
     <Modal title={initial ? "Editar iniciativa" : "Nova iniciativa"} sub="Só o essencial — o resto é preenchido nas atividades." onClose={onClose}>
       <Field label="Nome"><Input value={f.nome} onChange={(e) => set("nome", e.target.value)} /></Field>
       <Field label="Natureza"><Select value={f.natureza} onChange={(e) => set("natureza", e.target.value)}><option value="Projeto">Projeto</option><option value="Produto">Produção</option><option value="Processo">Processo</option></Select></Field>
       <div style={{ fontSize: 12, color: "var(--slate)", background: "var(--canvas)", borderRadius: 8, padding: "8px 11px", margin: "-4px 0 12px" }}>{dica}</div>
-      <Field label="Responsável"><Select value={f.resp} onChange={(e) => set("resp", e.target.value)}><option value="">Selecione...</option>{users.map((u) => <option key={u.id} value={u.nome}>{u.nome}</option>)}</Select></Field>
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}><Field label="Origem"><Select value={f.origem} onChange={(e) => set("origem", e.target.value)}><option value="Própria">Própria (nasce da CI)</option><option value="Outra área">Apoio a outra área</option></Select></Field></div>
-        {f.origem === "Outra área" && <div style={{ flex: 1 }}><Field label="Área de origem"><Select value={f.area} onChange={(e) => set("area", e.target.value)}>{AREAS.map((a) => <option key={a}>{a}</option>)}</Select></Field></div>}
+        {f.origem === "Outra área" && <div style={{ flex: 1 }}><Field label="Área de origem"><Input value={f.area || ""} maxLength={120} onChange={(e) => set("area", e.target.value)} placeholder="ex.: RH Kurumá" /></Field></div>}
       </div>
       {f.natureza === "Projeto" && (
         <div style={{ display: "flex", gap: 12 }}>

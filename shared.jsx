@@ -168,8 +168,7 @@ function gerarNotificacoes({ ativs, chamados, inis, user, podeAtender, ausencias
     if (meu && c.npsScore != null) push({ id: "nps:" + c.id, icon: "star", titulo: "Avaliação recebida", texto: `${c.id} · nota ${c.npsScore}${c.npsComentario ? ": " + c.npsComentario : ""}`, view: "atendimentos", chamadoId: c.id, ts: c.npsTs || c.criadoTs || 0 });
   });
   (inis || []).forEach((i) => {
-    if (i.resp === me && i.criadoPor && i.criadoPor !== me) push({ id: "ini:" + i.id + ":" + (i.criadoTs || 0), icon: "folder-plus", titulo: "Iniciativa sob sua responsabilidade", texto: `${i.nome} · por ${nomeCurto(i.criadoPor)}`, view: "iniciativas", ts: i.criadoTs || 0 });
-    (i.log || []).forEach((l) => { if (l.por && l.por !== me && ((l.k === "resp" && l.valor === me) || (i.resp === me && l.k !== "resp"))) push({ id: "iniupd:" + i.id + ":" + l.k + ":" + l.ts, icon: "folder-kanban", titulo: l.k === "resp" ? "Iniciativa direcionada a você" : "Alteração em iniciativa sua", texto: `${i.nome}: ${l.campo} → ${l.valor} · ${nomeCurto(l.por)}`, view: "iniciativas", ts: l.ts }); });
+    (i.log || []).forEach((l) => { if (l.por && l.por !== me && (l.k === "resp" && l.valor === me)) push({ id: "iniupd:" + i.id + ":" + l.k + ":" + l.ts, icon: "folder-kanban", titulo: l.k === "resp" ? "Iniciativa direcionada a você" : "Alteração em iniciativa sua", texto: `${i.nome}: ${l.campo} → ${l.valor} · ${nomeCurto(l.por)}`, view: "iniciativas", ts: l.ts }); });
   });
   (ausencias || []).forEach((a) => { if (a.substituto === me && a.criadoPor !== me && a.ate >= TODAY) push({ id: "sub:" + a.id, icon: "user-check", titulo: "Você cobre os atendimentos", texto: `${nomeCurto(a.nome)} · ${(a.tipo || "ausência").toLowerCase()} de ${fmtY(a.de)} a ${fmtY(a.ate)}`, view: "atendimentos", ts: a.criadoTs || ts0(a.de) }); });
   const vistos = new Set();

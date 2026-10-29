@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"daea283fa19b","ui_kits/portal-ci/Atendimentos.jsx":"0ab363aa8a59","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"235e60edaf7e","ui_kits/portal-ci/Cronograma.jsx":"bd9effd2eb09","ui_kits/portal-ci/Iniciativas.jsx":"a302502c59b8","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"510d285a1489","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/shared.jsx":"28e1206bccb5","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"8c72205eda43"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"7995456cd493","ui_kits/portal-ci/Atendimentos.jsx":"adf2361926b0","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"235e60edaf7e","ui_kits/portal-ci/Cronograma.jsx":"d1a55cb5e887","ui_kits/portal-ci/Iniciativas.jsx":"386027995b6c","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"61de3f14de29","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/shared.jsx":"13b79fdd3433","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"8c72205eda43"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -992,11 +992,11 @@ function App() {
     key: "atividades",
     label: "Atividades",
     icon: navIcon("atividades", "calendar-days")
-  }, ...(podeAtender ? [{
+  }, {
     key: "atendimentos",
     label: "Atendimentos",
     icon: navIcon("atendimentos", "headset")
-  }] : []), {
+  }, {
     key: "canais",
     label: "Canais",
     icon: navIcon("canais", "radio")
@@ -1176,7 +1176,7 @@ function App() {
     ciclos: ciclos,
     setCiclos: setCiclos,
     onBack: () => setView(prevView)
-  })), view === "atendimentos" && podeAtender && /*#__PURE__*/React.createElement(window.Atendimentos, _extends({}, common, {
+  })), view === "atendimentos" && /*#__PURE__*/React.createElement(window.Atendimentos, _extends({}, common, {
     chamados: chamados,
     setChamados: setChamados,
     setInis: setInis,
@@ -1389,7 +1389,7 @@ function NovoChamadoModal({
     inputBase
   } = window.PortalUI;
   const [f, setF] = React.useState({
-    area: AREAS[0],
+    area: "",
     tipo: TIPOS_ATENDIMENTO[0],
     urgencia: "Média",
     assunto: "",
@@ -1441,13 +1441,13 @@ function NovoChamadoModal({
       flex: 1
     }
   }, /*#__PURE__*/React.createElement(Field, {
-    label: "\xC1rea"
-  }, /*#__PURE__*/React.createElement(Select, {
+    label: "\xC1rea / empresa"
+  }, /*#__PURE__*/React.createElement(Input, {
     value: f.area,
-    onChange: e => set("area", e.target.value)
-  }, AREAS.map(a => /*#__PURE__*/React.createElement("option", {
-    key: a
-  }, a))))), /*#__PURE__*/React.createElement("div", {
+    maxLength: 120,
+    onChange: e => set("area", e.target.value),
+    placeholder: "ex.: RH Kurum\xE1"
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1
     }
@@ -2042,12 +2042,14 @@ function ChamadoDetalhe({
   user,
   ausencias,
   isGestao,
+  isAdmin,
   onPatch,
   onAddAtividade,
   onConverter,
   onAbrirIni,
   abrirAtiv,
-  onBack
+  onBack,
+  onExcluir
 }) {
   const {
     Card,
@@ -2071,6 +2073,8 @@ function ChamadoDetalhe({
   const [copiado, setCopiado] = React.useState(false);
   const [converter, setConverter] = React.useState(null);
   const c = chamado;
+  const pode = user.perfil !== "Visualizador";
+  const souResp = c.gestorResp === user.nome;
   const alvo = c.iniVinculada && inis.find(i => i.id === c.iniVinculada);
   const link = linkChamado(c.token || c.id);
   const lista = ativs.filter(a => a.chamadoOrigem === c.id);
@@ -2145,7 +2149,44 @@ function ChamadoDetalhe({
     }
   }, c.assunto), /*#__PURE__*/React.createElement(StatusBadge, {
     status: c.status
-  }), urgChip(c.urgencia)), /*#__PURE__*/React.createElement("div", {
+  }), urgChip(c.urgencia), isGestao && /*#__PURE__*/React.createElement("button", {
+    onClick: onExcluir,
+    title: "Excluir chamado",
+    style: {
+      marginLeft: "auto",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "6px 12px",
+      borderRadius: 8,
+      border: "1px solid var(--danger)",
+      background: "#fff",
+      color: "var(--danger)",
+      fontWeight: 700,
+      fontSize: 12,
+      cursor: "pointer",
+      fontFamily: "var(--font-sans)"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "trash-2",
+    size: 14
+  }), "Excluir chamado")), !pode && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      background: "var(--canvas)",
+      border: "1px solid var(--line)",
+      borderRadius: 10,
+      padding: "10px 14px",
+      marginBottom: 14,
+      fontSize: 13,
+      color: "var(--slate)"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "eye",
+    size: 16
+  }), "Somente visualiza\xE7\xE3o (perfil Visualizador)."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,2fr) minmax(280px,1fr)",
@@ -2252,14 +2293,16 @@ function ChamadoDetalhe({
     const on = v === "Atendimento";
     return /*#__PURE__*/React.createElement("button", {
       key: v,
-      onClick: () => !on && setConverter(v),
+      disabled: !pode,
+      onClick: () => pode && !on && setConverter(v),
       style: {
         textAlign: "left",
         padding: "10px 12px",
         borderRadius: 9,
         border: `2px solid ${on ? "var(--blue-dark)" : "var(--line)"}`,
         background: on ? "var(--soft-blue)" : "#fff",
-        cursor: on ? "default" : "pointer",
+        cursor: on || !pode ? "default" : "pointer",
+        opacity: pode || on ? 1 : .55,
         fontFamily: "var(--font-sans)",
         color: "var(--ink)"
       }
@@ -2296,7 +2339,7 @@ function ChamadoDetalhe({
       fontSize: 12,
       color: "var(--slate)"
     }
-  }, " \xB7 em ", alvo.nome) : ""), /*#__PURE__*/React.createElement("div", {
+  }, " \xB7 em ", alvo.nome) : ""), pode && /*#__PURE__*/React.createElement("div", {
     style: {
       marginLeft: "auto"
     }
@@ -2415,6 +2458,7 @@ function ChamadoDetalhe({
   }, "Status"), /*#__PURE__*/React.createElement("select", {
     style: inputBase,
     value: c.status,
+    disabled: !pode,
     onChange: e => onPatch({
       status: e.target.value
     })
@@ -2433,6 +2477,7 @@ function ChamadoDetalhe({
     type: "date",
     style: inputBase,
     value: c.prazo || "",
+    disabled: !pode,
     onChange: e => onPatch({
       prazo: e.target.value
     })
@@ -2448,14 +2493,33 @@ function ChamadoDetalhe({
   }, "Respons\xE1vel pelo atendimento"), /*#__PURE__*/React.createElement("select", {
     style: inputBase,
     value: c.gestorResp || "",
-    disabled: !isGestao,
+    disabled: !pode,
     onChange: e => onPatch({
       gestorResp: e.target.value
     })
-  }, users.map(u => /*#__PURE__*/React.createElement("option", {
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Ningu\xE9m ainda"), users.map(u => /*#__PURE__*/React.createElement("option", {
     key: u.id,
     value: u.nome
-  }, u.nome))))), /*#__PURE__*/React.createElement(Card, {
+  }, u.nome))), pode && !souResp && /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    icon: /*#__PURE__*/React.createElement(Icon, {
+      name: "hand",
+      size: 14
+    }),
+    style: {
+      width: "100%",
+      justifyContent: "center",
+      marginTop: 8
+    },
+    onClick: () => onPatch({
+      gestorResp: user.nome,
+      ...(c.status === "Novo" ? {
+        status: "Em atendimento"
+      } : {})
+    })
+  }, "Assumir chamado"))), pode && /*#__PURE__*/React.createElement(Card, {
     style: {
       padding: 18,
       display: "flex",
@@ -2549,7 +2613,12 @@ function ChamadoDetalhe({
     style: {
       padding: 18
     }
-  }, c.status !== "Concluído" ? /*#__PURE__*/React.createElement(Button, {
+  }, c.status !== "Concluído" ? !pode ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: "var(--muted)"
+    }
+  }, "Em andamento com ", nomeCurto(c.gestorResp), ".") : /*#__PURE__*/React.createElement(Button, {
     variant: "dark",
     icon: /*#__PURE__*/React.createElement(Icon, {
       name: "check-circle-2",
@@ -2577,7 +2646,7 @@ function ChamadoDetalhe({
       color: "var(--slate)",
       marginBottom: 8
     }
-  }, "Aguardando a nota do solicitante."), /*#__PURE__*/React.createElement("a", {
+  }, "Aguardando a nota do solicitante."), pode && /*#__PURE__*/React.createElement("a", {
     href: temWa ? waLink(c.whatsapp, msgConclui) : undefined,
     target: "_blank",
     rel: "noreferrer",
@@ -2659,6 +2728,18 @@ function Atendimentos({
   const [ausModal, setAusModal] = React.useState(false);
   const [fStatus, setFStatus] = React.useState("Abertos");
   const [copiado, setCopiado] = React.useState(false);
+  const logEvento = (c, campo, valor) => ({
+    ...c,
+    log: [...(c.log || []), {
+      k: "evento",
+      campo,
+      valor,
+      quando: agora(),
+      ts: Date.now(),
+      por: user.nome
+    }].slice(-60)
+  });
+  const registrar = (id, campo, valor) => setChamados(prev => prev.map(c => c.id === id ? logEvento(c, campo, valor) : c));
   const patchChamado = (id, patch) => setChamados(prev => prev.map(c => c.id === id ? aplicarPatch(c, patch, user.nome) : c));
   const addChamado = f => {
     const c = {
@@ -2672,7 +2753,14 @@ function Atendimentos({
       criadoTs: Date.now(),
       criadoPor: user.nome,
       atividades: [],
-      log: []
+      log: [{
+        k: "evento",
+        campo: "Chamado aberto",
+        valor: "por " + nomeCurto(user.nome) + (respAtual ? " · direcionado a " + nomeCurto(respAtual) : ""),
+        quando: agora(),
+        ts: Date.now(),
+        por: user.nome
+      }]
     };
     setChamados(prev => [c, ...prev]);
     setNovo(false);
@@ -2680,7 +2768,9 @@ function Atendimentos({
   };
   const addAtividade = (chamadoId, a) => {
     const c = chamados.find(x => x.id === chamadoId);
+    const descr = (a.nome || "Atividade") + " → " + nomeCurto(a.resp);
     if (c && c.iniVinculada) {
+      registrar(c.id, "Atividade desdobrada", descr);
       const nova = {
         ...a,
         chamadoOrigem: c.id
@@ -2716,10 +2806,10 @@ function Atendimentos({
       });
       return;
     }
-    setChamados(prev => prev.map(c => c.id === chamadoId ? aplicarPatch({
+    setChamados(prev => prev.map(c => c.id === chamadoId ? aplicarPatch(logEvento({
       ...c,
       atividades: [...c.atividades, a]
-    }, c.status === "Novo" ? {
+    }, "Atividade desdobrada", descr), c.status === "Novo" ? {
       status: "Em atendimento"
     } : {}, user.nome) : c));
   };
@@ -2786,12 +2876,18 @@ function Atendimentos({
     user: user,
     ausencias: ausencias,
     isGestao: isGestao,
-    onPatch: p => patchChamado(sel.id, p),
+    isAdmin: isAdmin,
+    onPatch: p => user.perfil !== "Visualizador" && patchChamado(sel.id, p),
     onAddAtividade: a => addAtividade(sel.id, a),
     onConverter: o => converterChamado(sel, o),
     onAbrirIni: onAbrirIni,
     abrirAtiv: abrirAtiv,
-    onBack: () => setFoco(null)
+    onBack: () => setFoco(null),
+    onExcluir: () => {
+      if (!confirm(`Excluir o chamado ${sel.id} "${sel.assunto}"?\n\nAs atividades do chamado também são apagadas e o link do solicitante deixa de funcionar.${sel.iniVinculada ? " A iniciativa criada a partir dele continua existindo." : ""}`)) return;
+      setFoco(null);
+      setChamados(prev => prev.filter(x => x.id !== sel.id));
+    }
   });
   const aus = ausenciaAtiva(ausencias, GESTORA_ATENDIMENTO, TODAY);
   const abertos = c => !["Concluído", "Cancelado"].includes(c.status);
@@ -2998,6 +3094,14 @@ function Atendimentos({
       textOverflow: "ellipsis"
     }
   }, c.solicitante, " \xB7 ", c.area, " \xB7 ", c.tipo, " \xB7 ", ativs.filter(x => x.chamadoOrigem === c.id).length, " atividade(s)", c.iniVinculada ? " · virou " + P.NAT_LABEL[c.formato] : "")), urgChip(c.urgencia), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: c.gestorResp ? "var(--slate)" : "var(--orange)",
+      width: 120,
+      textAlign: "right",
+      fontWeight: c.gestorResp ? 500 : 700
+    }
+  }, c.gestorResp ? nomeCurto(c.gestorResp) : "sem responsável"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: "var(--slate)",
@@ -5626,7 +5730,7 @@ function Cronograma({
         fontSize: 12.5,
         color: "var(--slate)"
       }
-    }, "Respons\xE1vel: ", nomeCurto(item.resp), " \xB7 ", ciclosIni.length, " ciclo(s)")), ciclosIni.length === 0 && /*#__PURE__*/React.createElement(Card, {
+    }, ciclosIni.length, " ciclo(s)")), ciclosIni.length === 0 && /*#__PURE__*/React.createElement(Card, {
       style: {
         padding: 30,
         textAlign: "center",
@@ -5754,9 +5858,6 @@ function Cronograma({
   }), /*#__PURE__*/React.createElement(Stat, {
     label: "Atividades",
     val: ts.length
-  }), /*#__PURE__*/React.createElement(Stat, {
-    label: "Respons\xE1vel",
-    val: nomeCurto(item.resp)
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
@@ -6007,9 +6108,9 @@ function Iniciativas({
   const exportar = () => {
     const ini = mesExp + "-01",
       fim = mesExp + "-31";
-    exportCSV(`iniciativas-${mesExp}.csv`, ["ID", "Iniciativa", "Natureza", "Origem", "Área demandante", "Responsável", "Status", "Atividades no mês", "P · Operacional", "M · Tático", "G · Estratégico", "Concluídas no mês", "Atrasadas"], filtered.map(i => {
+    exportCSV(`iniciativas-${mesExp}.csv`, ["ID", "Iniciativa", "Natureza", "Origem", "Área demandante", "Status", "Atividades no mês", "P · Operacional", "M · Tático", "G · Estratégico", "Concluídas no mês", "Atrasadas"], filtered.map(i => {
       const no = ativs.filter(a => a.iniId === i.id && P.overlaps(a.s, a.e, ini, fim));
-      return [i.id, i.nome, P.NAT_LABEL[i.natureza], i.origem, i.area || "", i.resp, i.status, no.length, no.filter(a => a.cx === "P").length, no.filter(a => a.cx === "M").length, no.filter(a => a.cx === "G").length, no.filter(a => P.concluido(a.status)).length, no.filter(a => a.atrasada).length];
+      return [i.id, i.nome, P.NAT_LABEL[i.natureza], i.origem, i.area || "", i.status, no.length, no.filter(a => a.cx === "P").length, no.filter(a => a.cx === "M").length, no.filter(a => a.cx === "G").length, no.filter(a => P.concluido(a.status)).length, no.filter(a => a.atrasada).length];
     }));
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -6240,7 +6341,7 @@ function Iniciativas({
       textAlign: "left",
       color: "var(--slate)"
     }
-  }, ["Iniciativa", "Natureza", "Origem", "Atividades P · M · G", "Responsável", "Status", ""].map(h => /*#__PURE__*/React.createElement("th", {
+  }, ["Iniciativa", "Natureza", "Origem", "Atividades P · M · G", "Status", ""].map(h => /*#__PURE__*/React.createElement("th", {
     key: h,
     style: {
       padding: "11px 12px",
@@ -6334,11 +6435,6 @@ function Iniciativas({
     }, k, " ", xs.filter(a => a.cx === k).length)));
   })()), /*#__PURE__*/React.createElement("td", {
     style: {
-      padding: "11px 12px",
-      color: "var(--slate)"
-    }
-  }, nomeCurto(i.resp)), /*#__PURE__*/React.createElement("td", {
-    style: {
       padding: "11px 12px"
     }
   }, /*#__PURE__*/React.createElement(StatusBadge, {
@@ -6419,8 +6515,7 @@ function IniciativaModal({
     nome: "",
     natureza: "Projeto",
     origem: "Própria",
-    area: AREAS[0],
-    resp: ""
+    area: ""
   });
   const set = (k, v) => setF({
     ...f,
@@ -6430,6 +6525,7 @@ function IniciativaModal({
     if (!f.nome) return;
     onSave({
       ...f,
+      resp: "",
       id: initial ? initial.id : nextId,
       status: f.status || (f.natureza === "Projeto" ? "Não iniciado" : "Ativo")
     });
@@ -6468,17 +6564,7 @@ function IniciativaModal({
       padding: "8px 11px",
       margin: "-4px 0 12px"
     }
-  }, dica), /*#__PURE__*/React.createElement(Field, {
-    label: "Respons\xE1vel"
-  }, /*#__PURE__*/React.createElement(Select, {
-    value: f.resp,
-    onChange: e => set("resp", e.target.value)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "Selecione..."), users.map(u => /*#__PURE__*/React.createElement("option", {
-    key: u.id,
-    value: u.nome
-  }, u.nome)))), /*#__PURE__*/React.createElement("div", {
+  }, dica), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 12
@@ -6502,12 +6588,12 @@ function IniciativaModal({
     }
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\xC1rea de origem"
-  }, /*#__PURE__*/React.createElement(Select, {
-    value: f.area,
-    onChange: e => set("area", e.target.value)
-  }, AREAS.map(a => /*#__PURE__*/React.createElement("option", {
-    key: a
-  }, a)))))), f.natureza === "Projeto" && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Input, {
+    value: f.area || "",
+    maxLength: 120,
+    onChange: e => set("area", e.target.value),
+    placeholder: "ex.: RH Kurum\xE1"
+  })))), f.natureza === "Projeto" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 12
@@ -7827,7 +7913,7 @@ function StatusReport({
   const [fResp, setFResp] = React.useState("");
   const [fDe, setFDe] = React.useState("");
   const [fAte, setFAte] = React.useState("");
-  const respostas = Array.from(new Set(inis.map(i => i.resp)));
+  const respostas = Array.from(new Set([...lanc, ...tarefas].map(x => x.resp).filter(Boolean))).sort();
   const dataDe = x => x.dataPub || x.entrega || x.prazo || x.s || "0000-00-00";
   const passa = (x, resp) => (!fIni || x.ini === fIni) && (!fResp || resp === fResp) && (!fDe || dataDe(x) >= fDe) && (!fAte || dataDe(x) <= fAte);
   const lancF = lanc.filter(l => passa(l, l.resp));
@@ -9560,16 +9646,8 @@ function gerarNotificacoes({
     });
   });
   (inis || []).forEach(i => {
-    if (i.resp === me && i.criadoPor && i.criadoPor !== me) push({
-      id: "ini:" + i.id + ":" + (i.criadoTs || 0),
-      icon: "folder-plus",
-      titulo: "Iniciativa sob sua responsabilidade",
-      texto: `${i.nome} · por ${nomeCurto(i.criadoPor)}`,
-      view: "iniciativas",
-      ts: i.criadoTs || 0
-    });
     (i.log || []).forEach(l => {
-      if (l.por && l.por !== me && (l.k === "resp" && l.valor === me || i.resp === me && l.k !== "resp")) push({
+      if (l.por && l.por !== me && l.k === "resp" && l.valor === me) push({
         id: "iniupd:" + i.id + ":" + l.k + ":" + l.ts,
         icon: "folder-kanban",
         titulo: l.k === "resp" ? "Iniciativa direcionada a você" : "Alteração em iniciativa sua",
