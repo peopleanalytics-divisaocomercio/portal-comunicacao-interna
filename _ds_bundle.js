@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"22a321f3d1bd","ui_kits/portal-ci/Atendimentos.jsx":"84a26fd2f7e0","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"36d09f7d136f","ui_kits/portal-ci/Cronograma.jsx":"77d70fcd9b5c","ui_kits/portal-ci/Iniciativas.jsx":"386027995b6c","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"61de3f14de29","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/qa/mock-sb.js":"6f5dee4f37cd","ui_kits/portal-ci/qa/qa-runner.js":"23ce8d71022b","ui_kits/portal-ci/shared.jsx":"04cf7fced67e","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"99c3a4f49cb9"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"PortalCIGABComRcioDesignSystem_6ad0f7","components":[{"name":"NatureBadge","sourcePath":"components/badges/NatureBadge.jsx"},{"name":"StatusBadge","sourcePath":"components/badges/StatusBadge.jsx"},{"name":"Button","sourcePath":"components/buttons/Button.jsx"},{"name":"Card","sourcePath":"components/cards/Card.jsx"},{"name":"SectionHeader","sourcePath":"components/cards/Card.jsx"},{"name":"KpiCard","sourcePath":"components/cards/Card.jsx"},{"name":"ProgressBar","sourcePath":"components/data/ProgressBar.jsx"},{"name":"Field","sourcePath":"components/forms/Field.jsx"},{"name":"Input","sourcePath":"components/forms/Field.jsx"},{"name":"Select","sourcePath":"components/forms/Field.jsx"},{"name":"TopNav","sourcePath":"components/navigation/TopNav.jsx"},{"name":"Modal","sourcePath":"components/overlays/Modal.jsx"}],"sourceHashes":{"components/badges/NatureBadge.jsx":"de61d8c9cd7e","components/badges/StatusBadge.jsx":"14694d18bcd2","components/buttons/Button.jsx":"04ea0c812e80","components/cards/Card.jsx":"fb987b70c2f1","components/data/ProgressBar.jsx":"0852164e8bd8","components/forms/Field.jsx":"6eec385540e8","components/navigation/TopNav.jsx":"041e49253426","components/overlays/Modal.jsx":"38c118d1f943","ui_kits/portal-ci/App.jsx":"22a321f3d1bd","ui_kits/portal-ci/Atendimentos.jsx":"84a26fd2f7e0","ui_kits/portal-ci/Atividades.jsx":"5d137c3ea8da","ui_kits/portal-ci/Canais.jsx":"a83df83eecdd","ui_kits/portal-ci/Cronograma.jsx":"77d70fcd9b5c","ui_kits/portal-ci/Iniciativas.jsx":"386027995b6c","ui_kits/portal-ci/Lancar.jsx":"cd94d7ea0534","ui_kits/portal-ci/Login.jsx":"6ae59af96f0a","ui_kits/portal-ci/Painel.jsx":"dae7e9a05998","ui_kits/portal-ci/StatusReport.jsx":"61de3f14de29","ui_kits/portal-ci/Usuarios.jsx":"ec754025ffd8","ui_kits/portal-ci/qa/mock-sb.js":"6f5dee4f37cd","ui_kits/portal-ci/qa/qa-runner.js":"23ce8d71022b","ui_kits/portal-ci/shared.jsx":"04cf7fced67e","ui_kits/portal-ci/supabaseClient.js":"6ab513eefce2","ui_kits/portal-ci/supabaseSync.js":"99c3a4f49cb9","ui_kits/portal-ci/sw.js":"28400d8a1979"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -4428,6 +4428,11 @@ function Canais({
   const [importDef, setImportDef] = React.useState(null);
   const [msg, setMsg] = React.useState("");
   const [sel, setSel] = React.useState({});
+  const [mesF, setMesF] = React.useState("");
+  const noPeriodo = d => {
+    const s = String(d || "");
+    return s.slice(0, 4) === String(ano) && (!mesF || s.slice(5, 7) === mesF);
+  };
   const selCanal = canal => m => setSel(s => ({
     ...s,
     [canal]: m
@@ -4561,14 +4566,20 @@ function Canais({
     cols
   }) => {
     const def = CANAIS_DEF[k];
-    const arr = lista(def);
+    const campoData = def.campos.find(c => c[2] === "month" || c[2] === "date");
+    const arr = lista(def).map((r, i) => ({
+      r,
+      i
+    })).filter(({
+      r
+    }) => !campoData || noPeriodo(r[campoData[0]]));
     if (!arr.length) return /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 12.5,
         color: "var(--muted)",
         padding: "10px 0 18px"
       }
-    }, "Nenhum dado lan\xE7ado ainda.");
+    }, lista(def).length ? "Nenhum dado neste período." : "Nenhum dado lançado ainda.");
     return /*#__PURE__*/React.createElement(Card, {
       style: {
         padding: 0,
@@ -4600,7 +4611,10 @@ function Canais({
         fontWeight: 700,
         textTransform: "uppercase"
       }
-    }, c[1])), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, arr.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    }, c[1])), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, arr.map(({
+      r,
+      i
+    }) => /*#__PURE__*/React.createElement("tr", {
       key: i,
       style: {
         borderTop: "1px solid var(--line)"
@@ -4627,10 +4641,14 @@ function Canais({
     })))))))));
   };
   const pick = (canal, arr) => {
-    const m = sel[canal];
-    return m ? arr.find(x => x.mes === m) || {
+    const m = sel[canal] || (mesF ? `${ano}-${mesF}` : null);
+    if (m) return arr.find(x => x.mes === m) || {
       mes: m
-    } : ultimo(arr);
+    };
+    const doAno = arr.filter(x => String(x.mes || "").slice(0, 4) === String(ano));
+    return doAno.length ? ultimo(doAno) : {
+      mes: ""
+    };
   };
   const acum = (arr, campo, m) => m && m.mes ? arr.filter(x => x.mes && x.mes.slice(0, 4) === m.mes.slice(0, 4) && x.mes <= m.mes).reduce((s, x) => s + (Number(x[campo]) || 0), 0) : undefined;
   const acumLabel = m => m && m.mes ? `Jan a ${MESES[Number(m.mes.slice(5, 7)) - 1]}/${m.mes.slice(0, 4)}` : "—";
@@ -4638,12 +4656,14 @@ function Canais({
     iM = pick("instagram", C.instagram.mensal),
     lM = pick("linkedin", C.linkedin.mensal);
   const mesLabel = m => m && m.mes ? `${MESES[Number(m.mes.slice(5, 7)) - 1]}/${m.mes.slice(0, 4)}` : "—";
-  const ultEd = C.revista.edicoes.slice().sort((a, b) => String(a.pub).localeCompare(String(b.pub))).pop() || {};
-  const newsEd = C.news.edicoes.slice().sort((a, b) => String(a.pub).localeCompare(String(b.pub)));
+  const revP = C.revista.edicoes.filter(e => noPeriodo(e.pub));
+  const ultEd = revP.slice().sort((a, b) => String(a.pub).localeCompare(String(b.pub))).pop() || {};
+  const newsEd = C.news.edicoes.filter(e => noPeriodo(e.pub)).sort((a, b) => String(a.pub).localeCompare(String(b.pub)));
   const ultNews = newsEd[newsEd.length - 1] || {};
-  const newsAno = newsEd.filter(e => String(e.pub || "").slice(0, 4) === String(ano));
+  const newsAno = newsEd;
   const somaNews = (arr, campo) => arr.reduce((s, e) => s + (Number(e[campo]) || 0), 0);
   const totNews = e => (Number(e.vInsta) || 0) + (Number(e.vLinkedin) || 0) + (Number(e.vEmail) || 0);
+  const periodoLabel = mesF ? `${MESES[Number(mesF) - 1]}/${ano}` : String(ano);
   const bloco = {
     marginBottom: 30
   };
@@ -4703,13 +4723,34 @@ function Canais({
       fontWeight: 700,
       fontSize: 12.5
     }
-  }, msg), /*#__PURE__*/React.createElement(Select, {
-    value: String(ano),
-    onChange: e => setAno(Number(e.target.value)),
+  }, msg), /*#__PURE__*/React.createElement("select", {
+    value: mesF,
+    onChange: e => {
+      setMesF(e.target.value);
+      setSel({});
+    },
     style: {
-      width: 120
+      ...window.PortalUI.inputBase,
+      width: 150
     }
-  }, [ano - 1, ano, ano + 1].map(y => /*#__PURE__*/React.createElement("option", {
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Todos os meses"), MESES.map((m, i) => /*#__PURE__*/React.createElement("option", {
+    key: m,
+    value: String(i + 1).padStart(2, "0")
+  }, m))), /*#__PURE__*/React.createElement("select", {
+    value: String(ano),
+    onChange: e => {
+      setAno(Number(e.target.value));
+      setSel({});
+    },
+    style: {
+      ...window.PortalUI.inputBase,
+      width: 110
+    }
+  }, Array.from({
+    length: Math.max(new Date().getFullYear() + 1 - 2024 + 1, 3)
+  }, (_, i) => 2024 + i).map(y => /*#__PURE__*/React.createElement("option", {
     key: y,
     value: String(y)
   }, y))))), /*#__PURE__*/React.createElement("div", {
@@ -4759,8 +4800,8 @@ function Canais({
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Epis\xF3dios",
-    value: C.podcast.episodios.length,
-    sub: "cadastrados"
+    value: C.podcast.episodios.filter(e => noPeriodo(e.pub)).length,
+    sub: periodoLabel
   })), /*#__PURE__*/React.createElement(Card, {
     style: {
       padding: 18,
@@ -4815,8 +4856,13 @@ function Canais({
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Edi\xE7\xF5es",
-    value: C.revista.edicoes.length,
-    sub: "cadastradas"
+    value: revP.length,
+    sub: periodoLabel
+  }), /*#__PURE__*/React.createElement(KpiCard, {
+    label: "Acessos no per\xEDodo",
+    value: num(revP.reduce((s, e) => s + (Number(e.acessos) || 0), 0)),
+    sub: periodoLabel,
+    color: "var(--nat-produto)"
   })), /*#__PURE__*/React.createElement(Tabela, {
     k: "revista"
   })), /*#__PURE__*/React.createElement("div", {
@@ -4852,14 +4898,14 @@ function Canais({
     sub: ultNews.edicao ? "última edição" : "",
     color: "var(--nat-produto)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
-    label: "Total acumulado " + ano,
+    label: "Total no período · " + periodoLabel,
     value: num(newsAno.reduce((s, e) => s + totNews(e), 0)),
     sub: `Insta ${num(somaNews(newsAno, "vInsta"))} · LinkedIn ${num(somaNews(newsAno, "vLinkedin"))} · E-mail ${num(somaNews(newsAno, "vEmail"))}`,
     color: "var(--success)"
   }), /*#__PURE__*/React.createElement(KpiCard, {
     label: "Edi\xE7\xF5es",
-    value: C.news.edicoes.length,
-    sub: "cadastradas"
+    value: newsEd.length,
+    sub: periodoLabel
   })), /*#__PURE__*/React.createElement(Tabela, {
     k: "news"
   })), /*#__PURE__*/React.createElement("div", {
@@ -12110,6 +12156,21 @@ window.PortalSync = {
   adminResetarSenha
 };
 })(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/portal-ci/supabaseSync.js", error: String((e && e.message) || e) }); }
+
+// ui_kits/portal-ci/sw.js
+try { (() => {
+// Service worker mínimo: permite instalar como app. Não guarda dados em cache (tudo vem ao vivo do Supabase).
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch", e => {
+  if (e.request.mode !== "navigate") return;
+  e.respondWith(fetch(e.request).catch(() => new Response("<meta name=viewport content='width=device-width'><body style='font-family:sans-serif;padding:30px;text-align:center;color:#16283D'><h2>Sem conexão</h2><p>Conecte-se à internet para usar o portal.</p></body>", {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8"
+    }
+  })));
+});
+})(); } catch (e) { __ds_ns.__errors.push({ path: "ui_kits/portal-ci/sw.js", error: String((e && e.message) || e) }); }
 
 __ds_ns.NatureBadge = __ds_scope.NatureBadge;
 
